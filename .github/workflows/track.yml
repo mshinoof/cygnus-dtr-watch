@@ -1,0 +1,90 @@
+name: Track KSEB DTR capacity
+
+on:
+  schedule:
+    # 06:47 IST daily (01:17 UTC). Deliberately off the top of the hour --
+    # GitHub's scheduler is congested at :00 and runs get delayed there.
+    - cron: "17 1 * * *"
+
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "What to run"
+        required: true
+        default: scrape
+        type: choice
+        options:
+          - scrape
+          - probe
+          - dry-run
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dtr-tracker
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Probe the KSEB page
+        if: inputs.mode == 'probe'
+        run: python -m tracker.run probe
+
+      - name: Save the probe results
+        if: inputs.mode == 'probe'
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-results
+          path: probe.json
+          retention-days: 30
+
+      - name: Scrape, compare and alert
+        if: inputs.mode != 'probe'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+        run: |
+          if [ "${{ inputs.mode }}" = "dry-run" ]; then
+            python -m tracker.run scrape --dry
+          else
+            python -m tracker.run scrape
+          fi
+
+      - name: Save the snapshot back to the repo
+        if: inputs.mode != 'probe' && inputs.mode != 'dry-run'
+        run: |
+          git config user.name  "dtr-tracker"
+          git config user.email "actions@github.com"
+          git add data dashboard.html
+          git diff --staged --quiet || git commit -m "DTR snapshot $(TZ=Asia/Kolkata date '+%Y-%m-%d %H:%M IST')"
+          git push
+
+      - name: Keep the evidence if something broke
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-${{ github.run_id }}
+          path: |
+            probe.json
+            data/latest.json
+          if-no-files-found: ignore

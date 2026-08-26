@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DTR capacity watch &mdash; Cygnus Energy</title>
+<style>
+  :root {
+    --ground:#EBEFE9; --panel:#F8FAF6; --rule:#C9D4CB;
+    --grid:rgba(35,62,45,.07);
+    --ink:#14201A; --muted:#5E6E64;
+    --copper:#A8551F; --volt:#1D6076; --feas:#8FB3BE; --amber:#8A6210;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:22px 22px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 20px 80px}
+
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:26px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted)}
+  h1{font-family:var(--mono);font-size:clamp(22px,4vw,34px);font-weight:600;
+    letter-spacing:-.01em;margin:6px 0 4px}
+  .sub{font-size:13px;color:var(--muted);max-width:60ch;line-height:1.5}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:1px;background:var(--rule);border:1px solid var(--rule);margin:26px 0}
+  .tile{background:var(--panel);padding:14px 16px}
+  .tile .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted)}
+  .tile .v{font-family:var(--mono);font-size:26px;font-variant-numeric:tabular-nums;
+    margin-top:6px;letter-spacing:-.02em}
+  .up{color:var(--copper)} .down{color:var(--amber)}
+
+  h2{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;
+    margin:36px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+
+  .change{background:var(--panel);border:1px solid var(--rule);
+    border-left:3px solid var(--rule);padding:11px 14px;margin-bottom:1px;
+    display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+  .change.gain{border-left-color:var(--copper)}
+  .change.loss{border-left-color:var(--amber)}
+  .change .type{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);min-width:120px}
+  .change .name{font-weight:600;font-size:14px}
+  .change .where{font-size:12px;color:var(--muted)}
+  .change .num{font-family:var(--mono);font-size:13px;
+    font-variant-numeric:tabular-nums;margin-left:auto;white-space:nowrap}
+
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px}
+  input,select{font-family:var(--sans);font-size:13px;padding:7px 10px;
+    border:1px solid var(--rule);background:var(--panel);color:var(--ink);
+    border-radius:0}
+  input{flex:1;min-width:200px}
+  input:focus,select:focus{outline:2px solid var(--volt);outline-offset:-1px}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);
+    border:1px solid var(--rule);font-size:13px}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600;
+    padding:9px 12px;border-bottom:1px solid var(--rule);white-space:nowrap;
+    cursor:pointer;user-select:none}
+  th:hover{color:var(--ink)}
+  td{padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:middle}
+  tbody tr:hover{background:rgba(29,96,118,.05)}
+  .n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;
+    white-space:nowrap}
+  .dim{color:var(--muted)}
+
+  /* the load meter: full width = 90% of DTR capacity */
+  .meter{position:relative;height:16px;background:var(--ground);
+    border:1px solid var(--rule);min-width:130px}
+  .meter i{position:absolute;top:0;bottom:0;display:block}
+  .meter .grid-c{left:0;background:var(--volt)}
+  .meter .feas{background:repeating-linear-gradient(45deg,
+    var(--feas) 0 3px,transparent 3px 6px);border-right:1px solid var(--feas)}
+  .meter .ghost{width:0;border-left:2px solid var(--copper);top:-3px;bottom:-3px}
+  .meter.full{border-color:var(--amber)}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);
+    font-family:var(--mono);margin:10px 0 0;letter-spacing:.04em}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .sw{width:16px;height:9px;display:inline-block;border:1px solid var(--rule)}
+
+  footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--rule);
+    font-size:11px;color:var(--muted);font-family:var(--mono);line-height:1.7}
+  .empty{background:var(--panel);border:1px dashed var(--rule);padding:26px;
+    text-align:center;color:var(--muted);font-size:13px}
+  @media (max-width:640px){
+    .change .num{margin-left:0;width:100%}
+    .hide-sm{display:none}
+  }
+  @media print{body{background:#fff}.controls{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Cygnus Energy &middot; grid capacity watch</div>
+    <h1>DTR capacity &amp; balance</h1>
+    <p class="sub">Transformer-wise renewable capacity published by KSEB under
+    Regulation 14(2), KSERC (Renewable Energy and Net Metering) Regulations, 2020.
+    Checked automatically; changes since the previous check are listed first.</p>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <h2 id="changes-heading">Changes since last check</h2>
+  <div id="changes"></div>
+
+  <h2>All tracked transformers</h2>
+  <div class="controls">
+    <input id="q" placeholder="Search transformer or section" aria-label="Search">
+    <select id="fDistrict" aria-label="Filter by district" hidden></select>
+    <select id="fSection" aria-label="Filter by section"></select>
+    <select id="fState" aria-label="Filter by available capacity">
+      <option value="">Any capacity</option>
+      <option value="free">Has balance available</option>
+      <option value="10">10 kW or more free</option>
+      <option value="50">50 kW or more free</option>
+      <option value="none">Fully subscribed</option>
+    </select>
+  </div>
+  <table>
+    <thead><tr>
+      <th data-k="transformer">Transformer</th>
+      <th data-k="section" class="hide-sm">Section</th>
+      <th data-k="capacity_90pct_kw" class="n">90% cap</th>
+      <th class="hide-sm">Load</th>
+      <th data-k="feasibility_issued_kw" class="n hide-sm">Feasibility</th>
+      <th data-k="grid_connected_kw" class="n hide-sm">Connected</th>
+      <th data-k="balance_available_kw" class="n">Balance</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--volt)"></i> grid connected</span>
+    <span><i class="sw" style="background:repeating-linear-gradient(45deg,var(--feas) 0 3px,transparent 3px 6px)"></i> feasibility issued</span>
+    <span><i class="sw" style="background:var(--ground)"></i> balance available</span>
+    <span><i class="sw" style="border:0;border-left:2px solid var(--copper);width:2px"></i> balance at previous check</span>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script id="snapshot" type="application/json">{"captured_at": null, "rows": []}</script>
+<script id="changelog" type="application/json">{"updated_at": null, "changes": []}</script>
+<script>
+const SNAP = JSON.parse(document.getElementById('snapshot').textContent);
+const CHG  = JSON.parse(document.getElementById('changelog').textContent);
+const rows = SNAP.rows || [];
+const changes = CHG.changes || [];
+const latestAt = CHG.updated_at || SNAP.captured_at;
+const recent = changes.filter(c => c.detected_at === latestAt);
+
+const kw = n => (n === null || n === undefined) ? '\u2014'
+  : Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s).replace(/[&<>"]/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* previous balance per transformer, so the meter can show a ghost marker */
+const prevBal = {};
+for (const c of recent) {
+  if (c.balance_before !== null && c.change_type !== 'NEW_DTR')
+    prevBal[`${c.district}|${c.section}|${c.transformer}`] = c.balance_before;
+}
+
+/* summary tiles */
+const totalCap = rows.reduce((a,r)=>a+r.capacity_90pct_kw,0);
+const totalBal = rows.reduce((a,r)=>a+r.balance_available_kw,0);
+const net = recent.reduce((a,c)=>a + (c.change_type==='NEW_DTR'
+  ? (c.new_value||0) : (c.change_type==='DTR_REMOVED' ? 0 : c.balance_delta)),0);
+const openCount = rows.filter(r=>r.balance_available_kw >= 3).length;
+document.getElementById('tiles').innerHTML = [
+  ['Transformers tracked', rows.length],
+  ['With capacity free', openCount],
+  ['Total balance', kw(totalBal)+' kW'],
+  ['Subscribed', totalCap ? Math.round((1-totalBal/totalCap)*100)+'%' : '\u2014'],
+  ['Change this run', `<span class="${net>=0?'up':'down'}">${net>=0?'+':''}${kw(net)} kW</span>`],
+].map(([k,v])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+
+/* change list */
+const GAIN = new Set(['NEW_DTR','DTR_UPGRADED','CAPACITY_FREED']);
+const box = document.getElementById('changes');
+if (!recent.length) {
+  box.innerHTML = '<div class="empty">No changes at the last check. '
+    + 'Every tracked transformer reads the same as before.</div>';
+} else {
+  box.innerHTML = recent.map(c => {
+    const cls = GAIN.has(c.change_type) ? 'gain' : 'loss';
+    let num;
+    if (c.change_type === 'NEW_DTR') num = `${kw(c.new_value)} kW capacity, ${kw(c.balance_after)} kW free`;
+    else if (c.change_type === 'DTR_REMOVED') num = 'delisted';
+    else if (c.field === 'capacity_90pct_kw') num = `${kw(c.old_value)} \u2192 ${kw(c.new_value)} kW`;
+    else num = `${kw(c.balance_before)} \u2192 ${kw(c.balance_after)} kW (${c.balance_delta>=0?'+':''}${kw(c.balance_delta)})`;
+    return `<div class="change ${cls}">
+      <span class="type">${esc(c.headline)}</span>
+      <span class="name">${esc(c.transformer)}</span>
+      <span class="where">${esc(c.district)} / ${esc(c.section)}</span>
+      <span class="num">${num}</span></div>`;
+  }).join('');
+}
+
+/* table */
+let sortKey = 'balance_available_kw', sortDir = -1;
+const districtSel = document.getElementById('fDistrict');
+const sectionSel = document.getElementById('fSection');
+
+/* The district picker only earns its place when you track more than one.
+   With a single district it would be a dropdown with one option. */
+const districts = [...new Set(rows.map(r => r.district))].sort();
+if (districts.length > 1) {
+  districtSel.hidden = false;
+  districtSel.innerHTML = '<option value="">All districts</option>' +
+    districts.map(d => `<option>${esc(d)}</option>`).join('');
+}
+
+function fillSections() {
+  const d = districtSel.value;
+  const list = [...new Set(rows.filter(r => !d || r.district === d)
+    .map(r => r.section))].sort();
+  const keep = sectionSel.value;
+  sectionSel.innerHTML = '<option value="">All sections</option>' +
+    list.map(s => `<option>${esc(s)}</option>`).join('');
+  if (list.includes(keep)) sectionSel.value = keep;
+}
+fillSections();
+
+function meter(r) {
+  const cap = r.capacity_90pct_kw || 0;
+  if (!cap) return '<div class="meter"></div>';
+  const g = Math.max(0, Math.min(100, r.grid_connected_kw/cap*100));
+  const f = Math.max(0, Math.min(100-g, r.feasibility_issued_kw/cap*100));
+  const key = `${r.district}|${r.section}|${r.transformer}`;
+  const pb = prevBal[key];
+  const ghost = (pb === undefined) ? '' :
+    `<i class="ghost" style="left:${Math.max(0,Math.min(100,(1-pb/cap)*100))}%"></i>`;
+  const full = r.balance_available_kw < 1 ? ' full' : '';
+  return `<div class="meter${full}" title="connected ${kw(r.grid_connected_kw)} kW, `
+    + `feasibility ${kw(r.feasibility_issued_kw)} kW of ${kw(cap)} kW">`
+    + `<i class="grid-c" style="width:${g}%"></i>`
+    + `<i class="feas" style="left:${g}%;width:${f}%"></i>${ghost}</div>`;
+}
+
+function draw() {
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const dist = districtSel.value;
+  const sec = sectionSel.value;
+  const st = document.getElementById('fState').value;
+  let out = rows.filter(r => {
+    if (dist && r.district !== dist) return false;
+    if (sec && r.section !== sec) return false;
+    if (q && !(r.transformer.toLowerCase().includes(q) || r.section.toLowerCase().includes(q))) return false;
+    const b = r.balance_available_kw;
+    if (st === 'free') return b >= 1;
+    if (st === 'none') return b < 1;
+    if (st) return b >= Number(st);
+    return true;
+  });
+  out.sort((a,b) => {
+    const x = a[sortKey], y = b[sortKey];
+    return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sortDir;
+  });
+  document.getElementById('rows').innerHTML = out.length ? out.map(r => `
+    <tr>
+      <td>${esc(r.transformer)}</td>
+      <td class="dim hide-sm">${esc(r.section)}</td>
+      <td class="n">${kw(r.capacity_90pct_kw)}</td>
+      <td class="hide-sm">${meter(r)}</td>
+      <td class="n dim hide-sm">${kw(r.feasibility_issued_kw)}</td>
+      <td class="n dim hide-sm">${kw(r.grid_connected_kw)}</td>
+      <td class="n"><strong>${kw(r.balance_available_kw)}</strong></td>
+    </tr>`).join('')
+    : '<tr><td colspan="7" class="dim" style="padding:24px;text-align:center">'
+      + (rows.length
+          ? 'Nothing matches those filters. Clear the search or pick another section.'
+          : 'Transformers will appear here after the first run.')
+      + '</td></tr>';
+}
+
+document.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {
+  const k = th.dataset.k;
+  sortDir = (k === sortKey) ? -sortDir : (typeof rows[0]?.[k] === 'string' ? 1 : -1);
+  sortKey = k; draw();
+});
+districtSel.addEventListener('change', () => { fillSections(); draw(); });
+['q','fSection','fState'].forEach(id =>
+  document.getElementById(id).addEventListener('input', draw));
+
+/* First-run state: the file exists but no scrape has happened yet. Say so
+   plainly rather than showing an empty table that looks broken. */
+if (!rows.length) {
+  document.getElementById('tiles').innerHTML =
+    '<div class="tile"><div class="k">Status</div>'
+    + '<div class="v" style="font-size:17px">No data yet</div></div>';
+  document.getElementById('changes-heading').textContent = 'Getting started';
+  document.getElementById('changes').innerHTML =
+    '<div class="empty">Nothing has been scraped yet.<br><br>'
+    + 'Open the Actions tab in this repository, choose '
+    + '<strong>Track KSEB DTR capacity</strong>, and run it. The first run saves '
+    + 'a baseline; from the second run onward, any change is listed here and '
+    + 'sent to Telegram.</div>';
+}
+
+document.getElementById('foot').innerHTML =
+  (SNAP.captured_at
+    ? `Snapshot taken ${esc(SNAP.captured_at.replace('T',' ').slice(0,19))} IST &middot; `
+    : 'No snapshot yet &middot; ')
+  + `${rows.length} transformers &middot; ${changes.length} changes on record<br>`
+  + `Source: wss.kseb.in/selfservices/reCap &middot; figures are KSEB's, reproduced as published.<br>`
+  + `Balance shown is indicative. Confirm with the section office before committing to a customer.`;
+
+draw();
+</script>
+</body>
+</html>
