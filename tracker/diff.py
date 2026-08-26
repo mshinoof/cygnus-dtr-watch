@@ -1,26 +1,25 @@
 """
-Compares two snapshots of DTR data and classifies what changed.
+Compares two DTR snapshots and classifies what changed.
 
-The change types are chosen around one question: does this open or close a
-selling opportunity for a rooftop solar connection in that section?
+Matching is on KSEB's own transformer id (scoped by section code), not on the
+name. That means a transformer being renamed, or rows being reordered, produces
+no alert at all -- which is right, because neither changes the capacity picture.
 
-    NEW_DTR             A transformer appeared that wasn't listed before.
-                        Usually a genuinely new installation, sometimes KSEB
-                        backfilling data. Either way: fresh headroom.
-    DTR_UPGRADED        90%-of-capacity went UP. The transformer was swapped
-                        for a bigger one (e.g. 100 kVA -> 250 kVA). This is the
-                        big one -- it can unlock tens of kW at a stroke.
-    DTR_DOWNGRADED      90%-of-capacity went DOWN. Rare; usually a data
-                        correction, but worth knowing before you promise a
-                        customer feasibility.
-    CAPACITY_FREED      Balance available went UP without a capacity change --
-                        someone's feasibility lapsed or a sanction was released.
-    CAPACITY_TAKEN      Balance available went DOWN. A competitor booked it.
-                        Time-sensitive if you had a pending customer there.
-    DTR_REMOVED         A transformer disappeared from the listing.
+The types are chosen around one question: does this open or close a chance to
+sell a rooftop connection in that section?
 
-Every comparison is done on the normalised transformer key, never on the Sl#
-column, because KSEB reshuffles serial numbers whenever a row is inserted.
+    DTR_UPGRADED     kVA rating went up -- a 100 kVA became a 250 kVA. The big
+                     one; unlocks tens of kW of sanctionable headroom at once.
+    NEW_DTR          A transformer appeared. Usually a new installation,
+                     sometimes KSEB backfilling. Either way, fresh headroom.
+    CAPACITY_FREED   Balance rose without a rating change -- a feasibility
+                     lapsed or a sanction was released.
+    CAPACITY_TAKEN   Balance fell. Someone else booked it. Time-sensitive if
+                     you had a customer pending on that DTR.
+    DTR_DOWNGRADED   kVA rating fell. Rare; usually a data correction, but
+                     worth seeing before you promise anyone feasibility.
+    DTR_REMOVED      Transformer no longer listed.
+    DTR_RENAMED      Same id, different name. Informational only.
 """
 
 from __future__ import annotations
@@ -29,22 +28,14 @@ from dataclasses import dataclass
 from typing import Literal
 
 ChangeType = Literal[
-    "NEW_DTR",
-    "DTR_UPGRADED",
-    "DTR_DOWNGRADED",
-    "CAPACITY_FREED",
-    "CAPACITY_TAKEN",
-    "DTR_REMOVED",
+    "DTR_UPGRADED", "NEW_DTR", "CAPACITY_FREED", "CAPACITY_TAKEN",
+    "DTR_DOWNGRADED", "DTR_REMOVED", "DTR_RENAMED",
 ]
 
-# Priority order for reporting: most commercially useful first.
 PRIORITY: dict[str, int] = {
-    "DTR_UPGRADED": 0,
-    "NEW_DTR": 1,
-    "CAPACITY_FREED": 2,
-    "CAPACITY_TAKEN": 3,
-    "DTR_DOWNGRADED": 4,
-    "DTR_REMOVED": 5,
+    "DTR_UPGRADED": 0, "NEW_DTR": 1, "CAPACITY_FREED": 2,
+    "CAPACITY_TAKEN": 3, "DTR_DOWNGRADED": 4, "DTR_REMOVED": 5,
+    "DTR_RENAMED": 6,
 }
 
 HEADLINE = {
@@ -54,7 +45,10 @@ HEADLINE = {
     "CAPACITY_TAKEN": "Capacity booked by someone else",
     "DTR_DOWNGRADED": "Transformer capacity reduced",
     "DTR_REMOVED": "Transformer no longer listed",
+    "DTR_RENAMED": "Transformer renamed",
 }
+
+GAIN = {"DTR_UPGRADED", "NEW_DTR", "CAPACITY_FREED"}
 
 
 @dataclass
@@ -63,17 +57,12 @@ class Change:
     district: str
     section: str
     transformer: str
-    field: str | None
-    old_value: float | None
-    new_value: float | None
+    feeder: str
+    kva_before: float | None
+    kva_after: float | None
     balance_before: float
     balance_after: float
-
-    @property
-    def delta(self) -> float:
-        if self.old_value is None or self.new_value is None:
-            return 0.0
-        return round(self.new_value - self.old_value, 2)
+    note: str = ""
 
     @property
     def balance_delta(self) -> float:
@@ -86,27 +75,18 @@ class Change:
             "district": self.district,
             "section": self.section,
             "transformer": self.transformer,
-            "field": self.field,
-            "old_value": self.old_value,
-            "new_value": self.new_value,
-            "delta": self.delta,
+            "feeder": self.feeder,
+            "kva_before": self.kva_before,
+            "kva_after": self.kva_after,
             "balance_before": self.balance_before,
             "balance_after": self.balance_after,
             "balance_delta": self.balance_delta,
+            "note": self.note,
         }
 
 
-def compare(
-    previous: list[dict],
-    current: list[dict],
-    min_kw: float = 0.5,
-    watch_balance: bool = True,
-) -> list[Change]:
-    """
-    previous / current: lists of DTR dicts (as produced by DTR.to_dict()).
-    min_kw: ignore movements smaller than this, so rounding noise in KSEB's
-            own figures doesn't page you at 6am over 0.02 kW.
-    """
+def compare(previous: list[dict], current: list[dict],
+            min_kw: float = 0.5, watch_balance: bool = True) -> list[Change]:
     prev = {r["key"]: r for r in previous}
     curr = {r["key"]: r for r in current}
     changes: list[Change] = []
@@ -115,99 +95,74 @@ def compare(
         before = prev.get(key)
 
         if before is None:
-            changes.append(
-                Change(
-                    change_type="NEW_DTR",
-                    district=now["district"],
-                    section=now["section"],
-                    transformer=now["transformer"],
-                    field="capacity_90pct_kw",
-                    old_value=None,
-                    new_value=now["capacity_90pct_kw"],
-                    balance_before=0.0,
-                    balance_after=now["balance_available_kw"],
-                )
-            )
+            changes.append(Change(
+                change_type="NEW_DTR", district=now["district"],
+                section=now["section"], transformer=now["transformer"],
+                feeder=now.get("feeder", ""), kva_before=None,
+                kva_after=now["kva"], balance_before=0.0,
+                balance_after=now["balance_kw"],
+            ))
             continue
 
-        cap_old = before["capacity_90pct_kw"]
-        cap_new = now["capacity_90pct_kw"]
-        cap_moved = abs(cap_new - cap_old) >= min_kw
+        kva_moved = abs(now["kva"] - before["kva"]) >= 1
+        if kva_moved:
+            changes.append(Change(
+                change_type="DTR_UPGRADED" if now["kva"] > before["kva"]
+                            else "DTR_DOWNGRADED",
+                district=now["district"], section=now["section"],
+                transformer=now["transformer"], feeder=now.get("feeder", ""),
+                kva_before=before["kva"], kva_after=now["kva"],
+                balance_before=before["balance_kw"],
+                balance_after=now["balance_kw"],
+            ))
 
-        if cap_moved:
-            changes.append(
-                Change(
-                    change_type="DTR_UPGRADED" if cap_new > cap_old else "DTR_DOWNGRADED",
-                    district=now["district"],
-                    section=now["section"],
-                    transformer=now["transformer"],
-                    field="capacity_90pct_kw",
-                    old_value=cap_old,
-                    new_value=cap_new,
-                    balance_before=before["balance_available_kw"],
-                    balance_after=now["balance_available_kw"],
-                )
-            )
+        # A balance move is only reported on its own when the rating held
+        # steady. After an upgrade the balance always jumps, and reporting both
+        # would mean two alerts for one event.
+        if watch_balance and not kva_moved:
+            delta = now["balance_kw"] - before["balance_kw"]
+            if abs(delta) >= min_kw:
+                changes.append(Change(
+                    change_type="CAPACITY_FREED" if delta > 0 else "CAPACITY_TAKEN",
+                    district=now["district"], section=now["section"],
+                    transformer=now["transformer"], feeder=now.get("feeder", ""),
+                    kva_before=before["kva"], kva_after=now["kva"],
+                    balance_before=before["balance_kw"],
+                    balance_after=now["balance_kw"],
+                ))
 
-        # Only report a balance move on its own if the capacity itself held
-        # steady -- otherwise it's just a consequence of the upgrade we already
-        # reported, and we'd be sending two alerts for one event.
-        if watch_balance and not cap_moved:
-            bal_old = before["balance_available_kw"]
-            bal_new = now["balance_available_kw"]
-            if abs(bal_new - bal_old) >= min_kw:
-                changes.append(
-                    Change(
-                        change_type="CAPACITY_FREED" if bal_new > bal_old else "CAPACITY_TAKEN",
-                        district=now["district"],
-                        section=now["section"],
-                        transformer=now["transformer"],
-                        field="balance_available_kw",
-                        old_value=bal_old,
-                        new_value=bal_new,
-                        balance_before=bal_old,
-                        balance_after=bal_new,
-                    )
-                )
+        if before["transformer"] != now["transformer"]:
+            changes.append(Change(
+                change_type="DTR_RENAMED", district=now["district"],
+                section=now["section"], transformer=now["transformer"],
+                feeder=now.get("feeder", ""), kva_before=before["kva"],
+                kva_after=now["kva"], balance_before=before["balance_kw"],
+                balance_after=now["balance_kw"],
+                note=f"was '{before['transformer']}'",
+            ))
 
     for key, gone in prev.items():
         if key not in curr:
-            changes.append(
-                Change(
-                    change_type="DTR_REMOVED",
-                    district=gone["district"],
-                    section=gone["section"],
-                    transformer=gone["transformer"],
-                    field="capacity_90pct_kw",
-                    old_value=gone["capacity_90pct_kw"],
-                    new_value=None,
-                    balance_before=gone["balance_available_kw"],
-                    balance_after=0.0,
-                )
-            )
+            changes.append(Change(
+                change_type="DTR_REMOVED", district=gone["district"],
+                section=gone["section"], transformer=gone["transformer"],
+                feeder=gone.get("feeder", ""), kva_before=gone["kva"],
+                kva_after=None, balance_before=gone["balance_kw"],
+                balance_after=0.0,
+            ))
 
-    changes.sort(
-        key=lambda c: (
-            PRIORITY[c.change_type],
-            -abs(c.balance_delta or 0),
-            c.section,
-            c.transformer,
-        )
-    )
+    changes.sort(key=lambda c: (PRIORITY[c.change_type],
+                                -abs(c.balance_delta), c.section, c.transformer))
     return changes
 
 
 def summarise(changes: list[Change]) -> dict:
-    """Counts by type plus net kW of headroom gained or lost across the run."""
     counts: dict[str, int] = {}
     for c in changes:
         counts[c.change_type] = counts.get(c.change_type, 0) + 1
-    net = round(
-        sum(
-            (c.new_value or 0.0) if c.change_type == "NEW_DTR" else c.balance_delta
-            for c in changes
-            if c.change_type != "DTR_REMOVED"
-        ),
-        2,
-    )
+    net = round(sum(
+        c.balance_after if c.change_type == "NEW_DTR" else c.balance_delta
+        for c in changes
+        if c.change_type not in ("DTR_REMOVED", "DTR_RENAMED")
+    ), 2)
     return {"total": len(changes), "by_type": counts, "net_headroom_kw": net}

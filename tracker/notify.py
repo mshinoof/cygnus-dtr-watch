@@ -29,6 +29,7 @@ ICON = {
     "CAPACITY_TAKEN": "\u26a0\ufe0f",
     "DTR_DOWNGRADED": "\u2b07\ufe0f",
     "DTR_REMOVED": "\u274c",
+    "DTR_RENAMED": "\u270f\ufe0f",
 }
 
 
@@ -52,20 +53,26 @@ def build_message(changes: list[dict], summary: dict, captured_at: str,
         for c in items:
             icon = ICON.get(c["change_type"], "\u2022")
             name = c["transformer"]
-            if c["change_type"] == "NEW_DTR":
-                lines.append(f"{icon} {name} \u2014 new, {c['new_value']} kW available")
-            elif c["change_type"] in ("DTR_UPGRADED", "DTR_DOWNGRADED"):
+            t = c["change_type"]
+            if t == "NEW_DTR":
                 lines.append(
-                    f"{icon} {name} \u2014 capacity {c['old_value']} \u2192 "
-                    f"{c['new_value']} kW (balance now {c['balance_after']} kW)"
+                    f"{icon} {name} \u2014 new, {c['kva_after']:g} kVA, "
+                    f"{c['balance_after']} kW available"
                 )
-            elif c["change_type"] == "DTR_REMOVED":
+            elif t in ("DTR_UPGRADED", "DTR_DOWNGRADED"):
+                lines.append(
+                    f"{icon} {name} \u2014 {c['kva_before']:g} \u2192 "
+                    f"{c['kva_after']:g} kVA, balance now {c['balance_after']} kW "
+                    f"({c['balance_delta']:+})"
+                )
+            elif t == "DTR_REMOVED":
                 lines.append(f"{icon} {name} \u2014 delisted")
+            elif t == "DTR_RENAMED":
+                lines.append(f"{icon} {name} \u2014 renamed, {c['note']}")
             else:
-                d = c["balance_delta"]
                 lines.append(
                     f"{icon} {name} \u2014 balance {c['balance_before']} \u2192 "
-                    f"{c['balance_after']} kW ({'+' if d >= 0 else ''}{d})"
+                    f"{c['balance_after']} kW ({c['balance_delta']:+})"
                 )
         lines.append("")
 

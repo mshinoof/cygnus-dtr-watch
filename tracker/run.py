@@ -27,35 +27,25 @@ def load_config(path: str = "config.yml") -> dict:
 
 
 def cmd_probe(headless: bool | None = None) -> int:
-    # GitHub's runners have no screen, so probe must go headless there.
-    # Locally we default to a visible window so you can watch it work.
-    if headless is None:
-        headless = os.environ.get("CI", "").lower() == "true"
-    print("Probing wss.kseb.in/selfservices/reCap ...")
-    result = probe(headless=headless)
-    print(f"\nFound {len(result['dropdowns'])} dropdown(s):")
-    for d in result["dropdowns"]:
-        print(f"  [{d['index']}] id={d.get('id')} name={d.get('name')}")
-        print(f"       {len(d.get('options', []))} options, "
-              f"first few: {d.get('options', [])[:5]}")
-    print(f"\nCaptured {len(result['xhr'])} XHR call(s). See probe.json.")
-    print("If one of them returns JSON, we can drop Playwright and hit it directly.")
+    print("Listing KSEB districts and sections ...")
+    result = probe()
+    print(f"\n{len(result['districts'])} districts:")
+    for name, did in sorted(result["districts"].items()):
+        secs = result["sections"].get(name, {})
+        n = len(secs) if isinstance(secs, dict) and "error" not in secs else "?"
+        print(f"  {name:<20} id={did:<4} {n} sections")
 
-    # Print a ready-to-paste config block for the first district.
-    if result["dropdowns"] and result["dropdowns"][0].get("options"):
-        first = result["dropdowns"][0]["options"][0]
-        secs = next((d.get("options", []) for d in result["dropdowns"]
-                     if d.get("note")), [])
-        print("\n--- paste into config.yml ---")
-        print("targets:")
-        print(f"  - district: {first}")
-        if secs:
-            print("    sections:")
-            for s in secs:
-                print(f"      - {s}")
-        else:
-            print('    sections: "*"')
-        print("--- end ---")
+    print("\n--- paste into config.yml ---")
+    print("targets:")
+    for name in sorted(result["districts"]):
+        secs = result["sections"].get(name, {})
+        if not isinstance(secs, dict) or "error" in secs:
+            continue
+        mark = "" if name.upper() == "KANNUR" else "# "
+        print(f"{mark}  - district: {name}")
+        print(f'{mark}    sections: "*"    # {len(secs)} sections')
+    print("--- end ---")
+    print("\nFull district/section listing written to probe.json")
     return 0
 
 
@@ -67,13 +57,11 @@ def cmd_scrape(dry: bool = False) -> int:
     print("Scraping KSEB DTR data ...")
     rows = [d.to_dict() for d in scrape(
         targets,
-        headless=opts.get("headless", True),
-        delay_s=opts.get("delay_seconds", 3.0),
-        settle_ms=opts.get("settle_ms", 2500),
+        delay_s=opts.get("delay_seconds", 1.5),
     )]
     if not rows:
         print("No rows scraped. Refusing to overwrite the last good snapshot.")
-        print("Run `python -m tracker.run probe` -- KSEB may have changed the page.")
+        print("Run `python -m tracker.run probe` -- KSEB may have changed the API.")
         return 1
 
     previous, prev_at = store.load_latest()

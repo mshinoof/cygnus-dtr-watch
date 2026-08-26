@@ -1,0 +1,181 @@
+{
+ "office": {
+  "office_code": "5501",
+  "place_name": "Alappuzha North"
+ },
+ "err_flag": 0,
+ "count": 144,
+ "ason": "27-08-2026 04:47 am",
+ "list": [
+  {
+   "feeder_name": "Munnodi [ALAPPUZHA 66 KV]",
+   "id": "550187",
+   "transformer_name": "ARATTUVAZHY CHURCH",
+   "capacity": "100",
+   "allowed_cap": "81 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "0"
+  },
+  {
+   "feeder_name": "Poomkavu [ALAPPUZHA 66 KV]",
+   "id": "550135",
+   "transformer_name": "ARATTUVAZHY EAST",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "5.000",
+   "regi": "6.000",
+   "comp_cap": "50.000"
+  },
+  {
+   "feeder_name": "Munnodi [ALAPPUZHA 66 KV]",
+   "id": "550121",
+   "transformer_name": "ARATTUVAZHY JN",
+   "capacity": "250",
+   "allowed_cap": "202 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "27.000"
+  },
+  {
+   "feeder_name": "Punnamada [ALAPPUZHA 66 KV]",
+   "id": "550146",
+   "transformer_name": "ASHRAMAM",
+   "capacity": "250",
+   "allowed_cap": "202 KW",
+   "feasible": "4.000",
+   "regi": "34.000",
+   "comp_cap": "153.115"
+  },
+  {
+   "feeder_name": "Thumpoly [ALAPPUZHA 66 KV]",
+   "id": "550144",
+   "transformer_name": "AUTO CARPET",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "0"
+  },
+  {
+   "feeder_name": "Chunkom [ALAPPUZHA 66 KV]",
+   "id": "5501107",
+   "transformer_name": "AVALOOKUNNU 1 WEST",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "50.200"
+  },
+  {
+   "feeder_name": "Chunkom [ALAPPUZHA 66 KV]",
+   "id": "5501113",
+   "transformer_name": "AVALOOKUNNU II EAST",
+   "capacity": "100",
+   "allowed_cap": "81 KW",
+   "feasible": "0",
+   "regi": "16.000",
+   "comp_cap": "45.000"
+  },
+  {
+   "feeder_name": "Chunkom [ALAPPUZHA 66 KV]",
+   "id": "550182",
+   "transformer_name": "AVALOOR MADAM",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "5.000",
+   "regi": "8.000",
+   "comp_cap": "59.200"
+  },
+  {
+   "feeder_name": "Chunkom [ALAPPUZHA 66 KV]",
+   "id": "5501219",
+   "transformer_name": "AVALOOR MADOM MAHADEVA TEMPLE",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "0"
+  },
+  {
+   "feeder_name": "Nehru Trophy [ALAPPUZHA 66 KV]",
+   "id": "55012",
+   "transformer_name": "BOAT JETTY",
+   "capacity": "250",
+   "allowed_cap": "202 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "57.000"
+  },
+  {
+   "feeder_name": "Punnamada [ALAPPUZHA 66 KV]",
+   "id": "5501111",
+   "transformer_name": "BRAHMASAMAJAM",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "3.000",
+   "regi": "8.000",
+   "comp_cap": "46.000"
+  },
+  {
+   "feeder_name": "Kommady [PATHIRAPPALLY 66 KV]",
+   "id": "5501103",
+   "transformer_name": "BRITISH PATTAM",
+   "capacity": "100",
+   "allowed_cap": "81 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "0"
+  },
+  {
+   "feeder_name": "Kommady [PATHIRAPPALLY 66 KV]",
+   "id": "5501160",
+   "transformer_name": "CASSIA HOTEL",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "0",
+   "regi": "3.000",
+   "comp_cap": "3.000"
+  },
+  {
+   "feeder_name": "Nehru Trophy [ALAPPUZHA 66 KV]",
+   "id": "550189",
+   "transformer_name": "CHATHANADU CHUDUKADU",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "5.000",
+   "regi": "5.000",
+   "comp_cap": "26.000"
+  },
+  {
+   "feeder_name": "Chunkom [ALAPPUZHA 66 KV]",
+   "id": "55018",
+   "transformer_name": "CHATHANADU COLONY",
+   "capacity": "250",
+   "allowed_cap": "202 KW",
+   "feasible": "8.000",
+   "regi": "3.000",
+   "comp_cap": "126.900"
+  },
+  {
+   "feeder_name": "Chunkom [ALAPPUZHA 66 KV]",
+   "id": "5501200",
+   "transformer_name": "CHATHANADY MUSILIM PALLY",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "0",
+   "regi": "0",
+   "comp_cap": "11.000"
+  },
+  {
+   "feeder_name": "Punnamada [ALAPPUZHA 66 KV]",
+   "id": "550154",
+   "transformer_name": "CHERAMANKULANGARA",
+   "capacity": "160",
+   "allowed_cap": "129 KW",
+   "feasible": "6.000",
+   "regi": "26.000",
+   "comp_cap": "90.040"
+  }
+ ]
+}

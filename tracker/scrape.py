@@ -1,18 +1,28 @@
 """
-Scrapes https://wss.kseb.in/selfservices/reCap
+Reads KSEB's DTR capacity data from https://wss.kseb.in/selfservices/reCap
 
-The page is a JSF/PrimeFaces app: picking District then Section fires an AJAX
-request that fills the DTR table. Rather than reverse-engineering the JSF
-ViewState protocol (which breaks whenever KSEB redeploys), we drive a real
-browser with Playwright and read the rendered table.
+The page looks like a JSF app, but underneath it calls three plain JSON
+endpoints. We call those directly -- no browser, no Playwright, about a minute
+for a whole district instead of five.
 
-Two modes:
-    probe()   -- one-off reconnaissance. Dumps every dropdown, its options and
-                 its real DOM id, plus any XHR the page fires. Run this once
-                 to confirm selectors and to discover whether there is a clean
-                 JSON endpoint we can hit directly later.
-    scrape()  -- the real run. Walks the configured district/section list and
-                 returns normalised DTR rows.
+    POST /selfservices/getDistricts                    -> {"KANNUR": 13, ...}
+    POST /selfservices/getinputSection  distictid=13   -> {"Thalassery [5701]": 5701, ...}
+    POST /selfservices/getDTRAvailable  sectionId=5701 -> {office:{...}, list:[...]}
+
+(The `distictid` misspelling is KSEB's, not ours. Don't correct it.)
+
+Each transformer record looks like:
+
+    {"feeder_name": "Munnodi [ALAPPUZHA 66 KV]",
+     "id": "550187",                  <- stable, section code + serial
+     "transformer_name": "ARATTUVAZHY CHURCH",
+     "capacity": "100",               <- kVA rating of the transformer
+     "allowed_cap": "81 KW",          <- 90% of capacity at 0.9 pf => kVA * 0.81
+     "feasible": "0",                 <- feasibility issued, kW
+     "regi": "0",                     <- registered but not yet commissioned, kW
+     "comp_cap": "0"}                 <- commissioned and grid-connected, kW
+
+Balance available = allowed_cap - (feasible + regi + comp_cap).
 """
 
 from __future__ import annotations
@@ -20,69 +30,73 @@ from __future__ import annotations
 import json
 import re
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass, asdict
-from typing import Iterable
 
-from playwright.sync_api import sync_playwright, Page, TimeoutError as PWTimeout
+BASE = "https://wss.kseb.in/selfservices"
+DISTRICTS_URL = f"{BASE}/getDistricts"
+SECTIONS_URL = f"{BASE}/getinputSection"
+DTR_URL = f"{BASE}/getDTRAvailable"
 
-URL = "https://wss.kseb.in/selfservices/reCap"
+HEADERS = {
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "X-Requested-With": "XMLHttpRequest",
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Referer": f"{BASE}/reCap",
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+    ),
+}
 
-# Column order on the KSEB table. Index 0 is the serial number, which we drop
-# because it is positional and reshuffles whenever a DTR is added.
-COLUMNS = [
-    "sl",
-    "transformer",
-    "capacity_90pct_kw",
-    "feasibility_issued_kw",
-    "grid_connected_kw",
-    "balance_available_kw",
-]
-
-NUMERIC = (
-    "capacity_90pct_kw",
-    "feasibility_issued_kw",
-    "grid_connected_kw",
-    "balance_available_kw",
-)
+SECTION_LABEL = re.compile(r"^(?P<name>.+?)\s*\[(?P<code>\d+)\]\s*$")
 
 
 @dataclass
 class DTR:
     district: str
     section: str
+    section_code: str
+    dtr_id: str
     transformer: str
-    capacity_90pct_kw: float
-    feasibility_issued_kw: float
-    grid_connected_kw: float
-    balance_available_kw: float
+    feeder: str
+    kva: float              # nameplate rating
+    allowed_kw: float       # 90% of capacity at 0.9 pf -- what may be sanctioned
+    feasible_kw: float      # feasibility issued, not yet commissioned
+    registered_kw: float    # registered applications
+    connected_kw: float     # commissioned, exporting today
+
+    @property
+    def committed_kw(self) -> float:
+        return round(self.feasible_kw + self.registered_kw + self.connected_kw, 3)
+
+    @property
+    def balance_kw(self) -> float:
+        return round(self.allowed_kw - self.committed_kw, 3)
 
     @property
     def key(self) -> str:
-        """Stable identity for a transformer across snapshots."""
-        return f"{self.district}|{self.section}|{normalise_name(self.transformer)}"
+        """
+        KSEB's own transformer id, scoped by section. Stable across renames and
+        across rows being reordered -- far better than matching on the name.
+        """
+        return f"{self.section_code}|{self.dtr_id}"
 
     def to_dict(self) -> dict:
         d = asdict(self)
         d["key"] = self.key
+        d["committed_kw"] = self.committed_kw
+        d["balance_kw"] = self.balance_kw
         return d
 
 
-def normalise_name(name: str) -> str:
-    """
-    KSEB's operators type transformer names by hand, so the same DTR shows up as
-    'KOODALI TOWN', 'Koodali  Town' and 'KOODALI TOWN ' across snapshots. Fold
-    those together so we don't fire a false 'new transformer' alert.
-    """
-    n = name.upper().strip()
-    n = re.sub(r"[^A-Z0-9]+", " ", n)
-    return re.sub(r"\s+", " ", n).strip()
-
-
-def to_float(raw: str) -> float:
-    """'12.50 kW' -> 12.5 ; '-' or '' -> 0.0 ; '1,250' -> 1250.0"""
+def to_float(raw) -> float:
+    """'81 KW' -> 81.0 ; '5.000' -> 5.0 ; '' or None -> 0.0"""
     if raw is None:
         return 0.0
-    cleaned = re.sub(r"[^0-9.\-]", "", raw.replace(",", ""))
+    cleaned = re.sub(r"[^0-9.\-]", "", str(raw).replace(",", ""))
     if cleaned in ("", "-", ".", "-."):
         return 0.0
     try:
@@ -91,213 +105,131 @@ def to_float(raw: str) -> float:
         return 0.0
 
 
-# --------------------------------------------------------------------------
-# Dropdown handling
-#
-# PrimeFaces renders <select> elements but usually hides them behind a styled
-# widget. The hidden native select is still in the DOM and still drives the
-# AJAX, so select_option() on it works and is far more stable than clicking
-# through the fake widget. We fall back to the widget only if that fails.
-# --------------------------------------------------------------------------
-
-def _selects(page: Page):
-    return page.locator("select")
+def normalise_name(name: str) -> str:
+    n = str(name).upper().strip()
+    n = re.sub(r"[^A-Z0-9]+", " ", n)
+    return re.sub(r"\s+", " ", n).strip()
 
 
-def _options(page: Page, index: int) -> list[str]:
-    opts = page.locator("select").nth(index).locator("option")
-    out = []
-    for i in range(opts.count()):
-        label = (opts.nth(i).inner_text() or "").strip()
-        if label and not re.match(r"^(select|--|choose)", label, re.I):
-            out.append(label)
+def _post(url: str, data: dict | None = None, retries: int = 3,
+          timeout: int = 45) -> dict:
+    body = urllib.parse.urlencode(data or {}).encode()
+    last: Exception | None = None
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, data=body, headers=HEADERS,
+                                         method="POST")
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                text = resp.read().decode("utf-8", errors="replace")
+            if not text.strip():
+                raise ValueError("empty response")
+            return json.loads(text)
+        except Exception as e:                      # noqa: BLE001
+            last = e
+            if attempt < retries - 1:
+                # Back off before retrying: KSEB's server is occasionally slow
+                # rather than down, and hammering it makes that worse.
+                time.sleep(2 * (attempt + 1))
+    raise RuntimeError(f"{url} failed after {retries} attempts: {last}")
+
+
+def get_districts() -> dict[str, int]:
+    """{'KANNUR': 13, 'KASARGODE': 14, ...}"""
+    return {str(k).strip(): int(v) for k, v in _post(DISTRICTS_URL).items()}
+
+
+def get_sections(district_id: int) -> dict[str, str]:
+    """{'Thalassery': '5701', ...} -- the '[code]' suffix is stripped."""
+    raw = _post(SECTIONS_URL, {"distictid": district_id})
+    out: dict[str, str] = {}
+    for label, code in raw.items():
+        m = SECTION_LABEL.match(str(label))
+        name = m.group("name").strip() if m else str(label).strip()
+        out[name] = str(code)
     return out
 
 
-def _choose(page: Page, index: int, label: str, settle_ms: int) -> None:
-    page.locator("select").nth(index).select_option(label=label)
-    page.wait_for_timeout(settle_ms)
-    try:
-        page.wait_for_load_state("networkidle", timeout=20_000)
-    except PWTimeout:
-        pass  # JSF keeps a long-poll open on some deployments
-
-
-def _read_table(page: Page) -> list[list[str]]:
-    """
-    Reads the DTR table. Handles PrimeFaces paginated tables by clicking through
-    'Next' until the page number stops advancing.
-    """
-    rows: list[list[str]] = []
-    seen_pages = 0
-    while True:
-        page.wait_for_timeout(400)
-        body = page.locator("table tbody tr")
-        for i in range(body.count()):
-            cells = body.nth(i).locator("td")
-            if cells.count() < 5:
-                continue
-            rows.append([(cells.nth(c).inner_text() or "").strip()
-                         for c in range(cells.count())])
-
-        nxt = page.locator(
-            "a.ui-paginator-next:not(.ui-state-disabled), "
-            "button:has-text('Next'):not([disabled])"
+def get_dtrs(district: str, section: str, section_code: str) -> list[DTR]:
+    payload = _post(DTR_URL, {"sectionId": section_code})
+    if payload.get("err_flag") not in (0, "0", None):
+        raise RuntimeError(
+            f"KSEB returned an error for {section}: {payload.get('disp_msg')}"
         )
-        seen_pages += 1
-        if nxt.count() == 0 or seen_pages > 60:
-            break
-        try:
-            nxt.first.click(timeout=3_000)
-            page.wait_for_timeout(800)
-        except Exception:
-            break
-    return rows
-
-
-def _rows_to_dtrs(rows: Iterable[list[str]], district: str, section: str) -> list[DTR]:
     out: list[DTR] = []
-    for r in rows:
-        # Some deployments omit the Sl# column. Detect by checking whether the
-        # first cell is a bare integer and the second is text.
-        cells = list(r)
-        if cells and re.fullmatch(r"\d+\.?", cells[0]) and len(cells) >= 6:
-            cells = cells[1:]
-        if len(cells) < 5:
-            continue
-        name = cells[0]
-        if not name or name.lower().startswith(("total", "grand")):
+    for r in payload.get("list") or []:
+        name = str(r.get("transformer_name") or "").strip()
+        if not name:
             continue
         out.append(
             DTR(
                 district=district,
                 section=section,
+                section_code=str(section_code),
+                dtr_id=str(r.get("id") or normalise_name(name)),
                 transformer=name,
-                capacity_90pct_kw=to_float(cells[1]),
-                feasibility_issued_kw=to_float(cells[2]),
-                grid_connected_kw=to_float(cells[3]),
-                balance_available_kw=to_float(cells[4]),
+                feeder=str(r.get("feeder_name") or "").strip(),
+                kva=to_float(r.get("capacity")),
+                allowed_kw=to_float(r.get("allowed_cap")),
+                feasible_kw=to_float(r.get("feasible")),
+                registered_kw=to_float(r.get("regi")),
+                connected_kw=to_float(r.get("comp_cap")),
             )
         )
     return out
 
 
-# --------------------------------------------------------------------------
-# Public entry points
-# --------------------------------------------------------------------------
-
-def probe(headless: bool = False, out_path: str = "probe.json") -> dict:
-    """
-    Run this once, with headless=False, and watch what happens. It writes
-    probe.json containing every dropdown's id and options plus every XHR the
-    page fired -- that tells us whether a direct JSON endpoint exists.
-    """
-    captured: list[dict] = []
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=headless)
-        page = browser.new_page()
-
-        def on_response(resp):
-            if resp.request.resource_type in ("xhr", "fetch"):
-                entry = {
-                    "url": resp.url,
-                    "method": resp.request.method,
-                    "status": resp.status,
-                    "post_data": (resp.request.post_data or "")[:4000],
-                }
-                try:
-                    entry["body_head"] = resp.text()[:4000]
-                except Exception:
-                    entry["body_head"] = "<binary or unavailable>"
-                captured.append(entry)
-
-        page.on("response", on_response)
-        page.goto(URL, wait_until="networkidle", timeout=60_000)
-        page.wait_for_timeout(3_000)
-
-        dropdowns = []
-        sel = _selects(page)
-        for i in range(sel.count()):
-            el = sel.nth(i)
-            dropdowns.append(
-                {
-                    "index": i,
-                    "id": el.get_attribute("id"),
-                    "name": el.get_attribute("name"),
-                    "options": _options(page, i)[:60],
-                }
-            )
-
-        # Exercise one district so we capture the section-load XHR too.
-        if dropdowns and dropdowns[0]["options"]:
-            _choose(page, 0, dropdowns[0]["options"][0], 2_500)
-            page.wait_for_timeout(2_500)
-            dropdowns.append(
-                {
-                    "index": 1,
-                    "id": _selects(page).nth(1).get_attribute("id") if sel.count() > 1 else None,
-                    "note": "sections after selecting first district",
-                    "options": _options(page, 1)[:60] if sel.count() > 1 else [],
-                }
-            )
-
-        result = {"dropdowns": dropdowns, "xhr": captured}
-        with open(out_path, "w") as f:
-            json.dump(result, f, indent=2)
-        browser.close()
+def probe(out_path: str = "probe.json", **_) -> dict:
+    """Lists districts and the sections of each. Cheap; no DTR data pulled."""
+    districts = get_districts()
+    result: dict = {"districts": districts, "sections": {}}
+    for name, did in districts.items():
+        try:
+            result["sections"][name] = get_sections(did)
+        except Exception as e:                      # noqa: BLE001
+            result["sections"][name] = {"error": str(e)}
+        time.sleep(0.5)
+    with open(out_path, "w") as f:
+        json.dump(result, f, indent=2)
     return result
 
 
-def scrape(
-    targets: list[dict],
-    headless: bool = True,
-    delay_s: float = 3.0,
-    settle_ms: int = 2_500,
-) -> list[DTR]:
+def scrape(targets: list[dict], delay_s: float = 1.5, **_) -> list[DTR]:
     """
-    targets: [{"district": "KANNUR", "sections": ["KANNUR", "THALASSERY"]}, ...]
-             sections may be the string "*" to take every section in the district.
+    targets: [{"district": "KANNUR", "sections": "*"}, ...]
+             sections may be "*" for every section in the district, or a list
+             of names (matched case- and punctuation-insensitively).
     """
+    districts = get_districts()
+    dmap = {normalise_name(k): (k, v) for k, v in districts.items()}
     results: list[DTR] = []
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=headless)
-        ctx = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 "
-                "CygnusEnergy-DTRTracker/1.0"
-            )
-        )
-        page = ctx.new_page()
-        page.goto(URL, wait_until="networkidle", timeout=60_000)
-        page.wait_for_timeout(2_000)
 
-        for target in targets:
-            district = target["district"]
-            _choose(page, 0, district, settle_ms)
+    for target in targets:
+        want_d = normalise_name(target["district"])
+        if want_d not in dmap:
+            print(f"  ! unknown district: {target['district']}")
+            print(f"    available: {', '.join(sorted(districts))}")
+            continue
+        dname, did = dmap[want_d]
 
-            wanted = target.get("sections", "*")
-            available = _options(page, 1)
-            sections = available if wanted in ("*", ["*"]) else [
-                s for s in available
-                if normalise_name(s) in {normalise_name(w) for w in wanted}
-            ]
-            missing = ([] if wanted in ("*", ["*"]) else
-                       [w for w in wanted
-                        if normalise_name(w) not in {normalise_name(s) for s in available}])
-            for m in missing:
-                print(f"  ! section not found in {district}: {m}")
+        sections = get_sections(did)
+        wanted = target.get("sections", "*")
+        if wanted in ("*", ["*"]):
+            chosen = sections
+        else:
+            want = {normalise_name(w) for w in wanted}
+            chosen = {n: c for n, c in sections.items() if normalise_name(n) in want}
+            for w in wanted:
+                if normalise_name(w) not in {normalise_name(n) for n in sections}:
+                    print(f"  ! section not found in {dname}: {w}")
 
-            for section in sections:
-                try:
-                    _choose(page, 1, section, settle_ms)
-                    rows = _read_table(page)
-                    dtrs = _rows_to_dtrs(rows, district, section)
-                    results.extend(dtrs)
-                    print(f"  {district} / {section}: {len(dtrs)} DTRs")
-                except Exception as e:
-                    print(f"  ! failed {district}/{section}: {e}")
-                time.sleep(delay_s)
+        print(f"  {dname}: {len(chosen)} section(s) to read")
+        for name, code in sorted(chosen.items()):
+            try:
+                rows = get_dtrs(dname, name, code)
+                results.extend(rows)
+                print(f"    {name} [{code}]: {len(rows)} DTRs")
+            except Exception as e:                  # noqa: BLE001
+                print(f"    ! {name} [{code}] failed: {e}")
+            time.sleep(delay_s)
 
-        browser.close()
     return results

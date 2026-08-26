@@ -15,37 +15,38 @@ You get an alert when:
 
 ---
 
+## How it reads the data
+
+The reCap page looks like a JSF app, but underneath it calls three plain JSON
+endpoints. This tracker calls those directly -- no browser, no Playwright:
+
+```
+POST /selfservices/getDistricts                    -> {"KANNUR": 13, ...}
+POST /selfservices/getinputSection  distictid=13   -> {"Thalassery [5701]": 5701, ...}
+POST /selfservices/getDTRAvailable  sectionId=5701 -> {office:{...}, list:[...]}
+```
+
+The JSON carries more than the visible table: a stable transformer `id`, the raw
+kVA rating, the feeder name, and KSEB's own "as on" timestamp. Two consequences
+worth knowing:
+
+- **Matching is on KSEB's transformer id, not the name.** A renamed transformer
+  produces a single "renamed" note rather than a false "new" plus "removed" pair.
+- **`allowed_cap` is the kVA rating x 0.81** -- 90% of capacity at 0.9 power
+  factor. Balance available is that minus feasibility issued, registered, and
+  commissioned.
+
 ## Setup
 
-### 1. Install
+### 1. Install (only needed to run it locally; GitHub needs none of this)
 
 ```bash
 cd kseb-dtr-tracker
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-playwright install chromium
 ```
 
-### 2. Probe the site first
-
-This step matters. The KSEB page is a JSF/PrimeFaces app, and the scraper drives
-a real browser rather than guessing at its AJAX protocol. Before the first real
-run, confirm the page looks the way the scraper expects:
-
-```bash
-python -m tracker.run probe
-```
-
-A browser window opens and drives itself. When it finishes you get `probe.json`
-containing every dropdown, its options, and every background request the page
-fired. Two things to check:
-
-- **The district and section names.** Copy the exact spellings into `config.yml`.
-- **The captured XHR calls.** If one of them returns clean JSON, tell me and I'll
-  rewrite the scraper to hit that endpoint directly. It would run in seconds
-  instead of minutes and wouldn't need a browser at all.
-
-### 3. Configure
+### 2. Configure
 
 Edit `config.yml`. Start with one district:
 
@@ -55,7 +56,7 @@ targets:
     sections: "*"
 ```
 
-### 4. First run
+### 3. First run
 
 ```bash
 python -m tracker.run scrape
@@ -92,7 +93,7 @@ Both fire if both are configured; neither is required.
 
 **On GitHub (recommended).** Push this to a repo, add the Telegram values under
 Settings → Secrets and variables → Actions, and `.github/workflows/track.yml`
-runs it at 06:30 IST daily. Each run commits the new snapshot, so `git log` on
+runs it at 06:30 IST daily. Each run takes about a minute and commits the new snapshot, so `git log` on
 `data/` becomes a permanent audit trail of how KSEB's numbers moved — genuinely
 useful when a customer's feasibility gets questioned six months later.
 
@@ -143,18 +144,20 @@ like hundreds of transformers vanishing and flood you with false alerts.
 ## When KSEB changes the page
 
 They will, eventually. The symptom is a run that scrapes zero rows and refuses
-to save. Run `python -m tracker.run probe` again with `headless: false` and watch
-what the browser does. `tracker/scrape.py` is the only file that needs to change;
-the diff engine, storage, alerts and dashboard don't care where the rows came from.
+to save. Run the workflow in `probe` mode -- it lists districts and sections
+using the same endpoints, so if that also fails, the API itself moved.
+`tracker/scrape.py` is the only file that needs to change; the diff engine,
+storage, alerts and dashboard don't care where the rows came from.
 
 ## Layout
 
 ```
-tracker/scrape.py     browser automation, table parsing, name normalisation
+tracker/scrape.py     the three KSEB endpoints, parsing, record shape
 tracker/diff.py       change detection and classification   (tested)
 tracker/store.py      JSON snapshots + rolling change log
 tracker/notify.py     Telegram / email
 tracker/dashboard.py  renders the self-contained HTML
 tracker/run.py        CLI: probe | scrape | render
-tests/test_diff.py    python tests/test_diff.py
+tests/test_diff.py    python tests/test_diff.py  (15 tests, incl. real KSEB payload)
+tests/fixture_*.json  a real captured KSEB response, used by the tests
 ```

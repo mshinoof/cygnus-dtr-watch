@@ -133,11 +133,12 @@
     <thead><tr>
       <th data-k="transformer">Transformer</th>
       <th data-k="section" class="hide-sm">Section</th>
-      <th data-k="capacity_90pct_kw" class="n">90% cap</th>
+      <th data-k="kva" class="n">kVA</th>
+      <th data-k="allowed_kw" class="n">Allowed</th>
       <th class="hide-sm">Load</th>
-      <th data-k="feasibility_issued_kw" class="n hide-sm">Feasibility</th>
-      <th data-k="grid_connected_kw" class="n hide-sm">Connected</th>
-      <th data-k="balance_available_kw" class="n">Balance</th>
+      <th data-k="feasible_kw" class="n hide-sm">Feasibility</th>
+      <th data-k="connected_kw" class="n hide-sm">Connected</th>
+      <th data-k="balance_kw" class="n">Balance</th>
     </tr></thead>
     <tbody id="rows"></tbody>
   </table>
@@ -170,15 +171,20 @@ const esc = s => String(s).replace(/[&<>"]/g, c =>
 const prevBal = {};
 for (const c of recent) {
   if (c.balance_before !== null && c.change_type !== 'NEW_DTR')
-    prevBal[`${c.district}|${c.section}|${c.transformer}`] = c.balance_before;
+    prevBal[`${c.section}|${c.transformer}`] = c.balance_before;
 }
 
 /* summary tiles */
-const totalCap = rows.reduce((a,r)=>a+r.capacity_90pct_kw,0);
-const totalBal = rows.reduce((a,r)=>a+r.balance_available_kw,0);
-const net = recent.reduce((a,c)=>a + (c.change_type==='NEW_DTR'
-  ? (c.new_value||0) : (c.change_type==='DTR_REMOVED' ? 0 : c.balance_delta)),0);
-const openCount = rows.filter(r=>r.balance_available_kw >= 3).length;
+const totalCap = rows.reduce((a,r)=>a+r.allowed_kw,0);
+const totalBal = rows.reduce((a,r)=>a+r.balance_kw,0);
+/* Net headroom must match tracker/diff.summarise(): a new transformer
+   contributes its whole balance, a delisting and a rename contribute nothing. */
+const net = recent.reduce((a, c) => {
+  if (c.change_type === 'NEW_DTR') return a + (c.balance_after || 0);
+  if (c.change_type === 'DTR_REMOVED' || c.change_type === 'DTR_RENAMED') return a;
+  return a + (c.balance_delta || 0);
+}, 0);
+const openCount = rows.filter(r=>r.balance_kw >= 3).length;
 document.getElementById('tiles').innerHTML = [
   ['Transformers tracked', rows.length],
   ['With capacity free', openCount],
@@ -196,21 +202,24 @@ if (!recent.length) {
 } else {
   box.innerHTML = recent.map(c => {
     const cls = GAIN.has(c.change_type) ? 'gain' : 'loss';
+    const t = c.change_type;
     let num;
-    if (c.change_type === 'NEW_DTR') num = `${kw(c.new_value)} kW capacity, ${kw(c.balance_after)} kW free`;
-    else if (c.change_type === 'DTR_REMOVED') num = 'delisted';
-    else if (c.field === 'capacity_90pct_kw') num = `${kw(c.old_value)} \u2192 ${kw(c.new_value)} kW`;
+    if (t === 'NEW_DTR') num = `${c.kva_after} kVA \u00b7 ${kw(c.balance_after)} kW free`;
+    else if (t === 'DTR_REMOVED') num = 'delisted';
+    else if (t === 'DTR_RENAMED') num = esc(c.note);
+    else if (t === 'DTR_UPGRADED' || t === 'DTR_DOWNGRADED')
+      num = `${c.kva_before} \u2192 ${c.kva_after} kVA \u00b7 ${kw(c.balance_after)} kW free`;
     else num = `${kw(c.balance_before)} \u2192 ${kw(c.balance_after)} kW (${c.balance_delta>=0?'+':''}${kw(c.balance_delta)})`;
     return `<div class="change ${cls}">
       <span class="type">${esc(c.headline)}</span>
       <span class="name">${esc(c.transformer)}</span>
-      <span class="where">${esc(c.district)} / ${esc(c.section)}</span>
+      <span class="where">${esc(c.district)} / ${esc(c.section)}${c.feeder ? ' \u00b7 ' + esc(c.feeder) : ''}</span>
       <span class="num">${num}</span></div>`;
   }).join('');
 }
 
 /* table */
-let sortKey = 'balance_available_kw', sortDir = -1;
+let sortKey = 'balance_kw', sortDir = -1;
 const districtSel = document.getElementById('fDistrict');
 const sectionSel = document.getElementById('fSection');
 
@@ -235,17 +244,18 @@ function fillSections() {
 fillSections();
 
 function meter(r) {
-  const cap = r.capacity_90pct_kw || 0;
+  const cap = r.allowed_kw || 0;
   if (!cap) return '<div class="meter"></div>';
-  const g = Math.max(0, Math.min(100, r.grid_connected_kw/cap*100));
-  const f = Math.max(0, Math.min(100-g, r.feasibility_issued_kw/cap*100));
-  const key = `${r.district}|${r.section}|${r.transformer}`;
+  const g = Math.max(0, Math.min(100, r.connected_kw/cap*100));
+  const f = Math.max(0, Math.min(100-g, (r.feasible_kw + r.registered_kw)/cap*100));
+  const key = `${r.section}|${r.transformer}`;
   const pb = prevBal[key];
   const ghost = (pb === undefined) ? '' :
     `<i class="ghost" style="left:${Math.max(0,Math.min(100,(1-pb/cap)*100))}%"></i>`;
-  const full = r.balance_available_kw < 1 ? ' full' : '';
-  return `<div class="meter${full}" title="connected ${kw(r.grid_connected_kw)} kW, `
-    + `feasibility ${kw(r.feasibility_issued_kw)} kW of ${kw(cap)} kW">`
+  const full = r.balance_kw < 1 ? ' full' : '';
+  return `<div class="meter${full}" title="connected ${kw(r.connected_kw)} kW, `
+    + `feasibility+registered ${kw(r.feasible_kw + r.registered_kw)} kW `
+    + `of ${kw(cap)} kW allowed (${r.kva} kVA transformer)">`
     + `<i class="grid-c" style="width:${g}%"></i>`
     + `<i class="feas" style="left:${g}%;width:${f}%"></i>${ghost}</div>`;
 }
@@ -259,7 +269,7 @@ function draw() {
     if (dist && r.district !== dist) return false;
     if (sec && r.section !== sec) return false;
     if (q && !(r.transformer.toLowerCase().includes(q) || r.section.toLowerCase().includes(q))) return false;
-    const b = r.balance_available_kw;
+    const b = r.balance_kw;
     if (st === 'free') return b >= 1;
     if (st === 'none') return b < 1;
     if (st) return b >= Number(st);
@@ -273,13 +283,14 @@ function draw() {
     <tr>
       <td>${esc(r.transformer)}</td>
       <td class="dim hide-sm">${esc(r.section)}</td>
-      <td class="n">${kw(r.capacity_90pct_kw)}</td>
+      <td class="n dim">${r.kva}</td>
+      <td class="n">${kw(r.allowed_kw)}</td>
       <td class="hide-sm">${meter(r)}</td>
-      <td class="n dim hide-sm">${kw(r.feasibility_issued_kw)}</td>
-      <td class="n dim hide-sm">${kw(r.grid_connected_kw)}</td>
-      <td class="n"><strong>${kw(r.balance_available_kw)}</strong></td>
+      <td class="n dim hide-sm">${kw(r.feasible_kw)}</td>
+      <td class="n dim hide-sm">${kw(r.connected_kw)}</td>
+      <td class="n"><strong>${kw(r.balance_kw)}</strong></td>
     </tr>`).join('')
-    : '<tr><td colspan="7" class="dim" style="padding:24px;text-align:center">'
+    : '<tr><td colspan="8" class="dim" style="padding:24px;text-align:center">'
       + (rows.length
           ? 'Nothing matches those filters. Clear the search or pick another section.'
           : 'Transformers will appear here after the first run.')

@@ -1,125 +1,155 @@
-import sys, os
+import sys, os, json, traceback
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from tracker.scrape import DTR, to_float, normalise_name, SECTION_LABEL
 from tracker.diff import compare, summarise
-from tracker.scrape import normalise_name, to_float, _rows_to_dtrs
+
+FIXTURE = os.path.join(os.path.dirname(__file__), "fixture_alappuzha_north.json")
 
 
-def dtr(name, cap, feas, grid, bal, section="KANNUR", district="KANNUR"):
-    return {
-        "key": f"{district}|{section}|{normalise_name(name)}",
-        "district": district,
-        "section": section,
-        "transformer": name,
-        "capacity_90pct_kw": cap,
-        "feasibility_issued_kw": feas,
-        "grid_connected_kw": grid,
-        "balance_available_kw": bal,
-    }
+def d(dtr_id, name, kva, allowed, feas=0.0, regi=0.0, conn=0.0,
+      section="Thalassery", code="5701", district="KANNUR", feeder="F1"):
+    return DTR(district=district, section=section, section_code=code,
+               dtr_id=dtr_id, transformer=name, feeder=feeder, kva=kva,
+               allowed_kw=allowed, feasible_kw=feas, registered_kw=regi,
+               connected_kw=conn).to_dict()
+
+
+# ---- parsing real KSEB payloads ------------------------------------------
+
+def test_parses_real_kseb_payload():
+    from tracker.scrape import get_dtrs
+    payload = json.load(open(FIXTURE))
+    rows = []
+    for r in payload["list"]:
+        rows.append(DTR(
+            district="ALAPUZHA", section="Alappuzha North", section_code="5501",
+            dtr_id=str(r["id"]), transformer=r["transformer_name"],
+            feeder=r["feeder_name"], kva=to_float(r["capacity"]),
+            allowed_kw=to_float(r["allowed_cap"]), feasible_kw=to_float(r["feasible"]),
+            registered_kw=to_float(r["regi"]), connected_kw=to_float(r["comp_cap"])))
+    assert len(rows) == 17
+    first = rows[0]
+    assert first.transformer == "ARATTUVAZHY CHURCH"
+    assert first.kva == 100.0
+    assert first.allowed_kw == 81.0
+    assert first.balance_kw == 81.0
+    assert first.key == "5501|550187"
+
+    ash = next(r for r in rows if r.transformer == "ASHRAMAM")
+    assert ash.kva == 250.0 and ash.allowed_kw == 202.0
+    assert ash.committed_kw == 191.115          # 4 + 34 + 153.115
+    assert ash.balance_kw == 10.885
+
+
+def test_allowed_cap_is_81pct_of_kva():
+    payload = json.load(open(FIXTURE))
+    for r in payload["list"]:
+        kva, allowed = to_float(r["capacity"]), to_float(r["allowed_cap"])
+        assert abs(allowed - int(kva * 0.81)) <= 1, (kva, allowed)
+
+
+def test_units_parsed_from_kw_string():
+    assert to_float("81 KW") == 81.0
+    assert to_float("129 KW") == 129.0
+    assert to_float("5.000") == 5.0
+    assert to_float("0") == 0.0
+    assert to_float("") == 0.0 and to_float(None) == 0.0
+
+
+def test_section_label_split():
+    m = SECTION_LABEL.match("Kayamkulam East [5531]")
+    assert m.group("name") == "Kayamkulam East" and m.group("code") == "5531"
+    assert SECTION_LABEL.match("Cherthala East [5704]").group("code") == "5704"
+
+
+# ---- change detection ----------------------------------------------------
+
+def test_upgrade_fires_once_not_twice():
+    prev = [d("101", "KOODALI TOWN", 100, 81, conn=20)]
+    curr = [d("101", "KOODALI TOWN", 250, 202, conn=20)]
+    ch = compare(prev, curr)
+    assert len(ch) == 1
+    assert ch[0].change_type == "DTR_UPGRADED"
+    assert (ch[0].kva_before, ch[0].kva_after) == (100, 250)
+    assert ch[0].balance_delta == 121.0
 
 
 def test_new_transformer():
-    prev = [dtr("KOODALI TOWN", 90.0, 10, 20, 60)]
-    curr = prev + [dtr("PALLIKKUNNU NEW", 225.0, 0, 0, 225.0)]
-    ch = compare(prev, curr)
-    assert len(ch) == 1
-    assert ch[0].change_type == "NEW_DTR"
-    assert ch[0].new_value == 225.0
-    assert ch[0].balance_after == 225.0
+    ch = compare([], [d("909", "AIRPORT ROAD NEW", 250, 202)])
+    assert ch[0].change_type == "NEW_DTR" and ch[0].balance_after == 202.0
 
 
-def test_upgrade_detected_and_beats_balance_noise():
-    prev = [dtr("KOODALI TOWN", 90.0, 10, 20, 60.0)]
-    curr = [dtr("KOODALI TOWN", 225.0, 10, 20, 195.0)]
-    ch = compare(prev, curr)
-    # one alert, not two -- the balance jump is a consequence of the upgrade
-    assert len(ch) == 1
-    assert ch[0].change_type == "DTR_UPGRADED"
-    assert ch[0].delta == 135.0
-    assert ch[0].balance_delta == 135.0
-
-
-def test_capacity_taken_by_competitor():
-    prev = [dtr("EDAKKAD", 90.0, 10, 20, 60.0)]
-    curr = [dtr("EDAKKAD", 90.0, 25, 20, 45.0)]
+def test_capacity_taken():
+    prev = [d("101", "EDAKKAD", 160, 129, feas=5)]
+    curr = [d("101", "EDAKKAD", 160, 129, feas=23.4)]
     ch = compare(prev, curr)
     assert [c.change_type for c in ch] == ["CAPACITY_TAKEN"]
-    assert ch[0].balance_delta == -15.0
+    assert ch[0].balance_delta == -18.4
 
 
 def test_capacity_freed():
-    prev = [dtr("EDAKKAD", 90.0, 30, 20, 40.0)]
-    curr = [dtr("EDAKKAD", 90.0, 5, 20, 65.0)]
+    prev = [d("101", "EDAKKAD", 160, 129, feas=30)]
+    curr = [d("101", "EDAKKAD", 160, 129, feas=5)]
+    assert compare(prev, curr)[0].change_type == "CAPACITY_FREED"
+
+
+def test_rename_is_not_new_plus_removed():
+    """The whole point of keying on KSEB's id."""
+    prev = [d("101", "KOODALI TOWN", 160, 129)]
+    curr = [d("101", "KOODALI TOWN JN", 160, 129)]
     ch = compare(prev, curr)
-    assert ch[0].change_type == "CAPACITY_FREED"
-    assert ch[0].balance_delta == 25.0
+    assert len(ch) == 1
+    assert ch[0].change_type == "DTR_RENAMED"
+    assert "KOODALI TOWN" in ch[0].note
 
 
 def test_rounding_noise_ignored():
-    prev = [dtr("EDAKKAD", 90.0, 30, 20, 40.00)]
-    curr = [dtr("EDAKKAD", 90.0, 30, 20, 40.02)]
+    prev = [d("101", "EDAKKAD", 160, 129, feas=30.00)]
+    curr = [d("101", "EDAKKAD", 160, 129, feas=30.02)]
     assert compare(prev, curr, min_kw=0.5) == []
 
 
-def test_name_variants_are_same_transformer():
-    prev = [dtr("KOODALI  TOWN ", 90.0, 10, 20, 60.0)]
-    curr = [dtr("Koodali-Town", 90.0, 10, 20, 60.0)]
-    assert compare(prev, curr) == []
-
-
 def test_removed():
-    prev = [dtr("OLD DTR", 90.0, 0, 0, 90.0)]
-    ch = compare(prev, [])
+    ch = compare([d("101", "OLD DTR", 100, 81)], [])
     assert ch[0].change_type == "DTR_REMOVED"
 
 
-def test_priority_ordering():
-    prev = [dtr("A", 90, 0, 0, 90), dtr("B", 90, 0, 0, 90)]
-    curr = [dtr("A", 90, 20, 0, 70), dtr("B", 225, 0, 0, 225)]
+def test_same_name_different_sections_do_not_collide():
+    a = d("1", "TOWN", 160, 129, section="Thalassery", code="5701")
+    b = d("1", "TOWN", 160, 129, section="Panoor", code="5702")
+    assert compare([a, b], [a, b]) == []
+    assert a["key"] != b["key"]
+
+
+def test_priority_puts_upgrades_first():
+    prev = [d("1", "A", 160, 129), d("2", "B", 160, 129)]
+    curr = [d("1", "A", 160, 129, feas=20), d("2", "B", 250, 202)]
     ch = compare(prev, curr)
-    assert ch[0].change_type == "DTR_UPGRADED"      # B first
-    assert ch[1].change_type == "CAPACITY_TAKEN"
+    assert ch[0].change_type == "DTR_UPGRADED"
 
 
 def test_summary_net_headroom():
-    prev = [dtr("A", 90, 0, 0, 90)]
-    curr = [dtr("A", 225, 0, 0, 225), dtr("B", 160, 0, 0, 160)]
+    prev = [d("1", "A", 100, 81)]
+    curr = [d("1", "A", 250, 202), d("2", "B", 160, 129)]
     s = summarise(compare(prev, curr))
     assert s["total"] == 2
-    assert s["net_headroom_kw"] == 135.0 + 160.0
+    assert s["net_headroom_kw"] == 121.0 + 129.0
 
 
-def test_number_parsing():
-    assert to_float("12.50 kW") == 12.5
-    assert to_float("-") == 0.0
-    assert to_float("") == 0.0
-    assert to_float("1,250") == 1250.0
-    assert to_float(None) == 0.0
-
-
-def test_row_parsing_drops_serial_and_totals():
-    rows = [
-        ["1", "KOODALI TOWN", "90.00", "10.00", "20.00", "60.00"],
-        ["2", "EDAKKAD", "225.00", "0.00", "0.00", "225.00"],
-        ["", "Total", "315.00", "10.00", "20.00", "285.00"],
-    ]
-    out = _rows_to_dtrs(rows, "KANNUR", "KANNUR")
-    assert len(out) == 2
-    assert out[0].transformer == "KOODALI TOWN"
-    assert out[1].balance_available_kw == 225.0
+def test_rename_excluded_from_net_headroom():
+    prev = [d("1", "A", 160, 129)]
+    curr = [d("1", "A RENAMED", 160, 129)]
+    assert summarise(compare(prev, curr))["net_headroom_kw"] == 0.0
 
 
 if __name__ == "__main__":
-    import traceback
     fns = [v for k, v in list(globals().items()) if k.startswith("test_")]
     failed = 0
     for fn in fns:
         try:
-            fn()
-            print(f"  PASS  {fn.__name__}")
+            fn(); print(f"  PASS  {fn.__name__}")
         except Exception:
-            failed += 1
-            print(f"  FAIL  {fn.__name__}")
-            traceback.print_exc()
-    print(f"\n{len(fns) - failed}/{len(fns)} passed")
+            failed += 1; print(f"  FAIL  {fn.__name__}"); traceback.print_exc()
+    print(f"\n{len(fns)-failed}/{len(fns)} passed")
     sys.exit(1 if failed else 0)

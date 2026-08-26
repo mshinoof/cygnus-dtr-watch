@@ -1,27 +1,34 @@
 # Which sections to watch.
 #
-# Run `python -m tracker.run probe` once to see the exact district and section
-# names KSEB uses, then paste them in. Names are matched case- and
-# punctuation-insensitively, so "Thalassery" and "THALASSERY" both work.
+# District names must match KSEB's spellings exactly as listed below (note
+# ALAPUZHA and KASARGODE -- those are KSEB's spellings, not typos).
 #
-# Use sections: "*" to take every section in a district. Start narrow --
-# a full district is a few hundred transformers and a slow, impolite scrape.
+# sections: "*"  takes every section in the district, resolved automatically
+#                at run time. No need to list them.
+# sections: [Thalassery, Panoor]   watches only those.
+#
+# Section names are matched case- and punctuation-insensitively. Run the
+# workflow in `probe` mode to see the full list for any district.
 
 targets:
   - district: KANNUR
     sections: "*"
 
-  # - district: KASARAGOD
-  #   sections:
-  #     - KANHANGAD
-  #     - NILESHWAR
+  # Uncomment to widen. Each district adds roughly a minute to the run.
+  # - district: KASARGODE
+  #   sections: "*"
+  # - district: KOZHIKODE
+  #   sections: [Vadakara, Nadapuram]
 
-dashboard_url: https://mshinoof.github.io/cygnusenergy/dtr/
+# Full district list KSEB publishes:
+#   ALAPUZHA  ERNAKULAM  IDUKKI  KANNUR  KASARGODE  KOLLAM  KOTTAYAM
+#   KOZHIKODE  MALAPPURAM  PALAKKAD  PATHANAMTHITTA  THIRUVANANTHAPURAM
+#   THRISSUR  WAYANAD
+
+dashboard_url: https://mshinoof.github.io/cygnus-dtr-watch/dashboard.html
 
 options:
-  headless: true          # false to watch the browser work, useful when debugging
-  delay_seconds: 3        # pause between sections; be a good guest on a public site
-  settle_ms: 2500         # how long to wait for the JSF AJAX to fill the table
+  delay_seconds: 1.5      # pause between section requests; be a good guest
   min_kw: 0.5             # ignore movements smaller than this (rounding noise)
   watch_balance: true     # false = only alert on new/upgraded transformers
   min_row_ratio: 0.6      # abort if a run returns under 60% of last run's rows
