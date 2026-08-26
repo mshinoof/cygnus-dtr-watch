@@ -1,5 +1,5 @@
 {
- "captured_at": "2026-08-27T05:04:12.176038+05:30",
+ "captured_at": "2026-08-27T05:08:34.822238+05:30",
  "source": "https://wss.kseb.in/selfservices/reCap",
  "count": 7359,
  "rows": [
@@ -40604,12 +40604,12 @@
    "feeder": "Kakkad [MUNDAYAD 110 KV S.S]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 5.0,
+   "feasible_kw": 0.0,
    "registered_kw": 5.0,
    "connected_kw": 25.0,
    "key": "6654|6654254",
-   "committed_kw": 35.0,
-   "balance_kw": 46.0
+   "committed_kw": 30.0,
+   "balance_kw": 51.0
   },
   {
    "district": "KANNUR",

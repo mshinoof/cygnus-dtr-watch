@@ -1,0 +1,20 @@
+{
+ "updated_at": "2026-08-27T05:08:34.822238+05:30",
+ "changes": [
+  {
+   "change_type": "CAPACITY_FREED",
+   "headline": "Capacity freed up",
+   "district": "KANNUR",
+   "section": "Kannur",
+   "transformer": "BADARIKKANDAM",
+   "feeder": "Kakkad [MUNDAYAD 110 KV S.S]",
+   "kva_before": 100.0,
+   "kva_after": 100.0,
+   "balance_before": 46.0,
+   "balance_after": 51.0,
+   "balance_delta": 5.0,
+   "note": "",
+   "detected_at": "2026-08-27T05:08:34.822238+05:30"
+  }
+ ]
+}
