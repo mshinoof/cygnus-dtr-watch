@@ -1,5 +1,5 @@
 {
- "captured_at": "2026-10-10T12:46:33.980607+05:30",
+ "captured_at": "2026-10-11T12:49:30.387941+05:30",
  "source": "https://wss.kseb.in/selfservices/reCap",
  "count": 7382,
  "rows": [
@@ -876,12 +876,12 @@
    "feeder": "Mangara [NADUKANI 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 5.0,
+   "feasible_kw": 0.0,
    "registered_kw": 0.0,
    "connected_kw": 9.0,
    "key": "6648|664882",
-   "committed_kw": 14.0,
-   "balance_kw": 67.0
+   "committed_kw": 9.0,
+   "balance_kw": 72.0
   },
   {
    "district": "KANNUR",
@@ -6924,12 +6924,12 @@
    "feeder": "Manal [KANNUR TOWN 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 5.0,
    "registered_kw": 6.0,
    "connected_kw": 27.0,
    "key": "6655|665391",
-   "committed_kw": 33.0,
-   "balance_kw": 48.0
+   "committed_kw": 38.0,
+   "balance_kw": 43.0
   },
   {
    "district": "KANNUR",
@@ -10076,12 +10076,12 @@
    "feeder": "Anjarakandy [KANHIRODE 220 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 5.0,
+   "feasible_kw": 0.0,
    "registered_kw": 3.0,
    "connected_kw": 31.74,
    "key": "6660|6660141",
-   "committed_kw": 39.74,
-   "balance_kw": 41.26
+   "committed_kw": 34.74,
+   "balance_kw": 46.26
   },
   {
    "district": "KANNUR",
@@ -11676,12 +11676,12 @@
    "feeder": "Keezhedath [KINFRA PARK 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 0.0,
    "registered_kw": 18.0,
    "connected_kw": 45.99,
    "key": "6661|666178",
-   "committed_kw": 66.99,
-   "balance_kw": 14.01
+   "committed_kw": 63.99,
+   "balance_kw": 17.01
   },
   {
    "district": "KANNUR",
@@ -12060,12 +12060,12 @@
    "feeder": "Ayipuzha [KUTTIYATTOOR 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 0.0,
    "registered_kw": 0.0,
    "connected_kw": 36.92,
    "key": "6661|666172",
-   "committed_kw": 39.92,
-   "balance_kw": 41.08
+   "committed_kw": 36.92,
+   "balance_kw": 44.08
   },
   {
    "district": "KANNUR",
@@ -19836,8 +19836,8 @@
    "feeder": "Cherupuzha Town [CHERUPUZHA 110 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 20.0,
-   "registered_kw": 0.0,
+   "feasible_kw": 0.0,
+   "registered_kw": 20.0,
    "connected_kw": 3.0,
    "key": "6816|6652153",
    "committed_kw": 23.0,
@@ -24780,8 +24780,8 @@
    "feeder": "Nadal [DHARMADOM 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 9.25,
-   "registered_kw": 0.0,
+   "feasible_kw": 4.25,
+   "registered_kw": 5.0,
    "connected_kw": 16.0,
    "key": "6677|6677111",
    "committed_kw": 25.25,
@@ -26316,8 +26316,8 @@
    "feeder": "Nadal [DHARMADOM 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 4.0,
-   "registered_kw": 6.0,
+   "feasible_kw": 0.0,
+   "registered_kw": 10.0,
    "connected_kw": 34.0,
    "key": "6677|667720",
    "committed_kw": 44.0,
@@ -26412,12 +26412,12 @@
    "feeder": "Anchampeedika [MANGAD 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 5.0,
+   "feasible_kw": 0.0,
    "registered_kw": 0.0,
    "connected_kw": 55.735,
    "key": "6646|6646232",
-   "committed_kw": 60.735,
-   "balance_kw": 20.265
+   "committed_kw": 55.735,
+   "balance_kw": 25.265
   },
   {
    "district": "KANNUR",
@@ -28796,12 +28796,12 @@
    "feeder": "Bakkalam [MANGAD 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 11.0,
+   "feasible_kw": 6.0,
    "registered_kw": 8.0,
    "connected_kw": 42.0,
    "key": "6646|6646139",
-   "committed_kw": 61.0,
-   "balance_kw": 20.0
+   "committed_kw": 56.0,
+   "balance_kw": 25.0
   },
   {
    "district": "KANNUR",
@@ -28988,12 +28988,12 @@
    "feeder": "Kolachery [MANGAD 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 0.0,
    "registered_kw": 5.0,
    "connected_kw": 73.0,
    "key": "6646|6646138",
-   "committed_kw": 81.0,
-   "balance_kw": 0.0
+   "committed_kw": 78.0,
+   "balance_kw": 3.0
   },
   {
    "district": "KANNUR",
@@ -34236,12 +34236,12 @@
    "feeder": "Mamanam [SREEKANDAPURAM 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 8.0,
+   "feasible_kw": 0.0,
    "registered_kw": 0.0,
    "connected_kw": 8.09,
    "key": "6649|664960",
-   "committed_kw": 16.09,
-   "balance_kw": 64.91
+   "committed_kw": 8.09,
+   "balance_kw": 72.91
   },
   {
    "district": "KANNUR",
@@ -35196,12 +35196,12 @@
    "feeder": "College [KINFRA PARK 110 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 6.0,
+   "feasible_kw": 2.0,
    "registered_kw": 10.0,
    "connected_kw": 88.17,
    "key": "6649|66493",
-   "committed_kw": 104.17,
-   "balance_kw": 24.83
+   "committed_kw": 100.17,
+   "balance_kw": 28.83
   },
   {
    "district": "KANNUR",
@@ -35244,12 +35244,12 @@
    "feeder": "Blathur [SREEKANDAPURAM 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 6.0,
+   "feasible_kw": 3.0,
    "registered_kw": 20.0,
    "connected_kw": 54.29,
    "key": "6649|664914",
-   "committed_kw": 80.29,
-   "balance_kw": 0.71
+   "committed_kw": 77.29,
+   "balance_kw": 3.71
   },
   {
    "district": "KANNUR",
@@ -36892,12 +36892,12 @@
    "feeder": "Padiyoor [IRITTY 110 KV]",
    "kva": 63.0,
    "allowed_kw": 51.0,
-   "feasible_kw": 11.0,
+   "feasible_kw": 8.0,
    "registered_kw": 5.0,
    "connected_kw": 9.0,
    "key": "6674|6674154",
-   "committed_kw": 25.0,
-   "balance_kw": 26.0
+   "committed_kw": 22.0,
+   "balance_kw": 29.0
   },
   {
    "district": "KANNUR",
@@ -39597,11 +39597,11 @@
    "kva": 100.0,
    "allowed_kw": 81.0,
    "feasible_kw": 5.0,
-   "registered_kw": 6.0,
+   "registered_kw": 6.3,
    "connected_kw": 66.73,
    "key": "6787|678712",
-   "committed_kw": 77.73,
-   "balance_kw": 3.27
+   "committed_kw": 78.03,
+   "balance_kw": 2.97
   },
   {
    "district": "KANNUR",
@@ -39964,12 +39964,12 @@
    "feeder": "Vellilode [PAZHASSI 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 5.0,
    "registered_kw": 3.0,
    "connected_kw": 23.0,
    "key": "6787|678740",
-   "committed_kw": 26.0,
-   "balance_kw": 55.0
+   "committed_kw": 31.0,
+   "balance_kw": 50.0
   },
   {
    "district": "KANNUR",
@@ -40108,12 +40108,12 @@
    "feeder": "Vellilode [PAZHASSI 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 5.0,
    "registered_kw": 0.0,
    "connected_kw": 22.8,
    "key": "6787|678754",
-   "committed_kw": 22.8,
-   "balance_kw": 58.2
+   "committed_kw": 27.8,
+   "balance_kw": 53.2
   },
   {
    "district": "KANNUR",
@@ -40300,8 +40300,8 @@
    "feeder": "Vellilode [PAZHASSI 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 6.0,
-   "registered_kw": 0.0,
+   "feasible_kw": 3.0,
+   "registered_kw": 3.0,
    "connected_kw": 60.5,
    "key": "6787|678739",
    "committed_kw": 66.5,
@@ -40748,12 +40748,12 @@
    "feeder": "Collectorate [MUNDAYAD 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 0.0,
    "registered_kw": 3.0,
    "connected_kw": 74.26,
    "key": "6654|6654173",
-   "committed_kw": 80.26,
-   "balance_kw": 0.74
+   "committed_kw": 77.26,
+   "balance_kw": 3.74
   },
   {
    "district": "KANNUR",
@@ -45436,12 +45436,12 @@
    "feeder": "Cheriyoor [NADUKANI 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 4.4,
    "registered_kw": 0.0,
    "connected_kw": 14.0,
    "key": "6645|664572",
-   "committed_kw": 14.0,
-   "balance_kw": 67.0
+   "committed_kw": 18.4,
+   "balance_kw": 62.6
   },
   {
    "district": "KANNUR",
@@ -46284,12 +46284,12 @@
    "feeder": "Bavuparamba [MANGAD 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 3.0,
    "registered_kw": 0.0,
    "connected_kw": 13.0,
    "key": "6645|664518",
-   "committed_kw": 13.0,
-   "balance_kw": 68.0
+   "committed_kw": 16.0,
+   "balance_kw": 65.0
   },
   {
    "district": "KANNUR",
@@ -47484,12 +47484,12 @@
    "feeder": "Vellarampara [TALIPARAMBA 220 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 8.0,
    "registered_kw": 0.0,
    "connected_kw": 39.66,
    "key": "6645|664514",
-   "committed_kw": 42.66,
-   "balance_kw": 86.34
+   "committed_kw": 47.66,
+   "balance_kw": 81.34
   },
   {
    "district": "KANNUR",
@@ -47660,12 +47660,12 @@
    "feeder": "Poovam [TALIPARAMBA 220 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 3.0,
    "registered_kw": 0.0,
    "connected_kw": 6.015,
    "key": "6645|6645198",
-   "committed_kw": 6.015,
-   "balance_kw": 74.985
+   "committed_kw": 9.015,
+   "balance_kw": 71.985
   },
   {
    "district": "KANNUR",
@@ -48380,12 +48380,12 @@
    "feeder": "Kuniyan [PAYYANNUR 110 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 6.0,
+   "feasible_kw": 9.0,
    "registered_kw": 0.0,
    "connected_kw": 88.0,
    "key": "6651|66517",
-   "committed_kw": 94.0,
-   "balance_kw": 35.0
+   "committed_kw": 97.0,
+   "balance_kw": 32.0
   },
   {
    "district": "KANNUR",
@@ -48540,12 +48540,12 @@
    "feeder": "Karivellur [PAYYANNUR 110 KV S.S]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 5.0,
    "registered_kw": 0.0,
    "connected_kw": 91.7,
    "key": "6651|66514",
-   "committed_kw": 91.7,
-   "balance_kw": 37.3
+   "committed_kw": 96.7,
+   "balance_kw": 32.3
   },
   {
    "district": "KANNUR",
@@ -63037,8 +63037,8 @@
    "kva": 250.0,
    "allowed_kw": 202.0,
    "feasible_kw": 8.0,
-   "registered_kw": 5.0,
-   "connected_kw": 51.3,
+   "registered_kw": 0.0,
+   "connected_kw": 56.3,
    "key": "6643|664313",
    "committed_kw": 64.3,
    "balance_kw": 137.7
@@ -67516,12 +67516,12 @@
    "feeder": "Vidyapeedam [PAZHASSI 33 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 18.0,
    "registered_kw": 10.0,
    "connected_kw": 38.165,
    "key": "6675|66753",
-   "committed_kw": 51.165,
-   "balance_kw": 77.835
+   "committed_kw": 66.165,
+   "balance_kw": 62.835
   },
   {
    "district": "KANNUR",
@@ -68092,12 +68092,12 @@
    "feeder": "Vidyapeedam [PAZHASSI 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 5.0,
    "registered_kw": 0.0,
    "connected_kw": 22.0,
    "key": "6675|6675160",
-   "committed_kw": 22.0,
-   "balance_kw": 59.0
+   "committed_kw": 27.0,
+   "balance_kw": 54.0
   },
   {
    "district": "KANNUR",
@@ -68188,12 +68188,12 @@
    "feeder": "Nagavalavu [KINFRA PARK 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 15.0,
+   "feasible_kw": 10.0,
    "registered_kw": 0.0,
    "connected_kw": 24.0,
    "key": "6675|667533",
-   "committed_kw": 39.0,
-   "balance_kw": 42.0
+   "committed_kw": 34.0,
+   "balance_kw": 47.0
   },
   {
    "district": "KANNUR",
@@ -69820,12 +69820,12 @@
    "feeder": "Edakkanam [MATTANNUR 110 KV S.S]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 3.4,
    "registered_kw": 0.0,
    "connected_kw": 6.0,
    "key": "6675|6675163",
-   "committed_kw": 6.0,
-   "balance_kw": 75.0
+   "committed_kw": 9.4,
+   "balance_kw": 71.6
   },
   {
    "district": "KANNUR",
@@ -70572,12 +70572,12 @@
    "feeder": "Mayyil [KUTTIYATTOOR 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 3.0,
    "registered_kw": 0.0,
    "connected_kw": 0.0,
    "key": "6667|6661111",
-   "committed_kw": 0.0,
-   "balance_kw": 81.0
+   "committed_kw": 3.0,
+   "balance_kw": 78.0
   },
   {
    "district": "KANNUR",
@@ -71356,12 +71356,12 @@
    "feeder": "Mayyil [KUTTIYATTOOR 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 5.0,
+   "feasible_kw": 10.0,
    "registered_kw": 0.0,
    "connected_kw": 22.015,
    "key": "6667|666724",
-   "committed_kw": 27.015,
-   "balance_kw": 53.985
+   "committed_kw": 32.015,
+   "balance_kw": 48.985
   },
   {
    "district": "KANNUR",
@@ -73421,8 +73421,8 @@
    "kva": 100.0,
    "allowed_kw": 81.0,
    "feasible_kw": 3.4,
-   "registered_kw": 14.0,
-   "connected_kw": 61.57,
+   "registered_kw": 6.0,
+   "connected_kw": 69.57,
    "key": "6653|665354",
    "committed_kw": 78.97,
    "balance_kw": 2.03
@@ -73436,12 +73436,12 @@
    "feeder": "Pallikunnu [PUTHIYATHERU 33 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 15.0,
+   "feasible_kw": 10.0,
    "registered_kw": 8.0,
    "connected_kw": 86.235,
    "key": "6653|66536",
-   "committed_kw": 109.235,
-   "balance_kw": 19.765
+   "committed_kw": 104.235,
+   "balance_kw": 24.765
   },
   {
    "district": "KANNUR",
@@ -73516,12 +73516,12 @@
    "feeder": "Sreepuram [PUTHIYATHERU 33 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 8.0,
    "registered_kw": 21.009,
    "connected_kw": 47.3,
    "key": "6653|665360",
-   "committed_kw": 71.309,
-   "balance_kw": 57.691
+   "committed_kw": 76.309,
+   "balance_kw": 52.691
   },
   {
    "district": "KANNUR",
@@ -73868,12 +73868,12 @@
    "feeder": "Puzhathi [MUNDAYAD 110 KV S.S]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 5.0,
    "registered_kw": 3.0,
    "connected_kw": 69.0,
    "key": "6653|665915",
-   "committed_kw": 72.0,
-   "balance_kw": 9.0
+   "committed_kw": 77.0,
+   "balance_kw": 4.0
   },
   {
    "district": "KANNUR",
@@ -73885,8 +73885,8 @@
    "kva": 160.0,
    "allowed_kw": 129.0,
    "feasible_kw": 0.0,
-   "registered_kw": 8.0,
-   "connected_kw": 35.0,
+   "registered_kw": 3.0,
+   "connected_kw": 40.0,
    "key": "6653|6653137",
    "committed_kw": 43.0,
    "balance_kw": 86.0
@@ -74061,8 +74061,8 @@
    "kva": 160.0,
    "allowed_kw": 129.0,
    "feasible_kw": 0.0,
-   "registered_kw": 20.0,
-   "connected_kw": 77.0,
+   "registered_kw": 15.0,
+   "connected_kw": 82.0,
    "key": "6653|6653108",
    "committed_kw": 97.0,
    "balance_kw": 32.0
@@ -74349,8 +74349,8 @@
    "kva": 250.0,
    "allowed_kw": 202.0,
    "feasible_kw": 0.0,
-   "registered_kw": 5.0,
-   "connected_kw": 36.78,
+   "registered_kw": 0.0,
+   "connected_kw": 41.78,
    "key": "6653|66532",
    "committed_kw": 41.78,
    "balance_kw": 160.22
@@ -74396,12 +74396,12 @@
    "feeder": "Puzhathi [MUNDAYAD 110 KV S.S]",
    "kva": 250.0,
    "allowed_kw": 202.0,
-   "feasible_kw": 0.0,
+   "feasible_kw": 3.0,
    "registered_kw": 0.0,
    "connected_kw": 92.04,
    "key": "6653|66598",
-   "committed_kw": 92.04,
-   "balance_kw": 109.96
+   "committed_kw": 95.04,
+   "balance_kw": 106.96
   },
   {
    "district": "KANNUR",
@@ -75644,12 +75644,12 @@
    "feeder": "Vallangad [PUTHUR (KANNUR) 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 10.0,
+   "feasible_kw": 0.0,
    "registered_kw": 0.0,
    "connected_kw": 41.0,
    "key": "6672|6672107",
-   "committed_kw": 51.0,
-   "balance_kw": 30.0
+   "committed_kw": 41.0,
+   "balance_kw": 40.0
   },
   {
    "district": "KANNUR",
@@ -75852,12 +75852,12 @@
    "feeder": "Panoor [PANOOR 110 KV S.S]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 28.0,
+   "feasible_kw": 23.0,
    "registered_kw": 0.0,
    "connected_kw": 22.0,
    "key": "6672|66727",
-   "committed_kw": 50.0,
-   "balance_kw": 31.0
+   "committed_kw": 45.0,
+   "balance_kw": 36.0
   },
   {
    "district": "KANNUR",
@@ -76588,12 +76588,12 @@
    "feeder": "Vallangad [PUTHUR (KANNUR) 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 13.5,
+   "feasible_kw": 7.5,
    "registered_kw": 3.0,
    "connected_kw": 54.3,
    "key": "6672|667275",
-   "committed_kw": 70.8,
-   "balance_kw": 10.2
+   "committed_kw": 64.8,
+   "balance_kw": 16.2
   },
   {
    "district": "KANNUR",
@@ -79132,12 +79132,12 @@
    "feeder": "Kunnothparamba [PUTHUR (KANNUR) 33 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 8.0,
+   "feasible_kw": 3.0,
    "registered_kw": 11.0,
    "connected_kw": 56.84,
    "key": "6673|667253",
-   "committed_kw": 75.84,
-   "balance_kw": 53.16
+   "committed_kw": 70.84,
+   "balance_kw": 58.16
   },
   {
    "district": "KANNUR",
@@ -81244,12 +81244,12 @@
    "feeder": "Kottila [TALIPARAMBA 220 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 13.0,
+   "feasible_kw": 18.0,
    "registered_kw": 0.0,
    "connected_kw": 25.13,
    "key": "6760|676083",
-   "committed_kw": 38.13,
-   "balance_kw": 42.87
+   "committed_kw": 43.13,
+   "balance_kw": 37.87
   },
   {
    "district": "KANNUR",
@@ -83084,12 +83084,12 @@
    "feeder": "Pattiam [THALASSERY 220 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 0.0,
    "registered_kw": 3.0,
    "connected_kw": 76.78,
    "key": "6681|66812",
-   "committed_kw": 82.78,
-   "balance_kw": 46.22
+   "committed_kw": 79.78,
+   "balance_kw": 49.22
   },
   {
    "district": "KANNUR",
@@ -83724,12 +83724,12 @@
    "feeder": "Pattiam [THALASSERY 220 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 3.0,
+   "feasible_kw": 0.0,
    "registered_kw": 10.0,
    "connected_kw": 17.0,
    "key": "6681|667281",
-   "committed_kw": 30.0,
-   "balance_kw": 51.0
+   "committed_kw": 27.0,
+   "balance_kw": 54.0
   },
   {
    "district": "KANNUR",
@@ -83916,12 +83916,12 @@
    "feeder": "Pattiam [THALASSERY 220 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 6.0,
+   "feasible_kw": 3.0,
    "registered_kw": 0.0,
    "connected_kw": 18.0,
    "key": "6681|668122",
-   "committed_kw": 24.0,
-   "balance_kw": 57.0
+   "committed_kw": 21.0,
+   "balance_kw": 60.0
   },
   {
    "district": "KANNUR",
@@ -86892,12 +86892,12 @@
    "feeder": "Kandankali [PAYYANNUR TOWN 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 5.0,
+   "feasible_kw": 0.0,
    "registered_kw": 0.0,
    "connected_kw": 11.0,
    "key": "6638|663880",
-   "committed_kw": 16.0,
-   "balance_kw": 65.0
+   "committed_kw": 11.0,
+   "balance_kw": 70.0
   },
   {
    "district": "KANNUR",
@@ -92252,12 +92252,12 @@
    "feeder": "Kadavathur [PANOOR 110 KV S.S]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 15.0,
+   "feasible_kw": 5.0,
    "registered_kw": 0.0,
    "connected_kw": 33.0,
    "key": "6817|6671142",
-   "committed_kw": 48.0,
-   "balance_kw": 33.0
+   "committed_kw": 38.0,
+   "balance_kw": 43.0
   },
   {
    "district": "KANNUR",
@@ -94428,12 +94428,12 @@
    "feeder": "Andaloor [PINARAYI 110 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 8.0,
+   "feasible_kw": 3.0,
    "registered_kw": 3.009,
    "connected_kw": 44.3,
    "key": "6679|667967",
-   "committed_kw": 55.309,
-   "balance_kw": 73.691
+   "committed_kw": 50.309,
+   "balance_kw": 78.691
   },
   {
    "district": "KANNUR",
@@ -94700,12 +94700,12 @@
    "feeder": "Mambaram [PINARAYI 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 6.0,
+   "feasible_kw": 3.0,
    "registered_kw": 8.0,
    "connected_kw": 52.7,
    "key": "6679|667989",
-   "committed_kw": 66.7,
-   "balance_kw": 14.3
+   "committed_kw": 63.7,
+   "balance_kw": 17.3
   },
   {
    "district": "KANNUR",
@@ -94780,12 +94780,12 @@
    "feeder": "Cherumavilayi [PINARAYI 110 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 10.0,
+   "feasible_kw": 0.0,
    "registered_kw": 0.0,
    "connected_kw": 10.0,
    "key": "6679|667938",
-   "committed_kw": 20.0,
-   "balance_kw": 61.0
+   "committed_kw": 10.0,
+   "balance_kw": 71.0
   },
   {
    "district": "KANNUR",
@@ -97068,12 +97068,12 @@
    "feeder": "Karetta [PAZHASSI 33 KV]",
    "kva": 100.0,
    "allowed_kw": 81.0,
-   "feasible_kw": 6.0,
+   "feasible_kw": 3.0,
    "registered_kw": 0.0,
    "connected_kw": 36.0,
    "key": "6776|677651",
-   "committed_kw": 42.0,
-   "balance_kw": 39.0
+   "committed_kw": 39.0,
+   "balance_kw": 42.0
   },
   {
    "district": "KANNUR",
@@ -108541,8 +108541,8 @@
    "kva": 100.0,
    "allowed_kw": 81.0,
    "feasible_kw": 0.0,
-   "registered_kw": 3.0,
-   "connected_kw": 5.0,
+   "registered_kw": 0.0,
+   "connected_kw": 8.0,
    "key": "6676|6676129",
    "committed_kw": 8.0,
    "balance_kw": 73.0
@@ -110173,8 +110173,8 @@
    "kva": 100.0,
    "allowed_kw": 81.0,
    "feasible_kw": 0.0,
-   "registered_kw": 8.5,
-   "connected_kw": 0.0,
+   "registered_kw": 0.0,
+   "connected_kw": 8.5,
    "key": "6761|676177",
    "committed_kw": 8.5,
    "balance_kw": 72.5
@@ -110365,8 +110365,8 @@
    "kva": 100.0,
    "allowed_kw": 81.0,
    "feasible_kw": 0.0,
-   "registered_kw": 5.0,
-   "connected_kw": 61.04,
+   "registered_kw": 0.0,
+   "connected_kw": 66.04,
    "key": "6761|676132",
    "committed_kw": 66.04,
    "balance_kw": 14.96
@@ -110461,8 +110461,8 @@
    "kva": 100.0,
    "allowed_kw": 81.0,
    "feasible_kw": 8.0,
-   "registered_kw": 5.0,
-   "connected_kw": 21.0,
+   "registered_kw": 0.0,
+   "connected_kw": 26.0,
    "key": "6761|676114",
    "committed_kw": 34.0,
    "balance_kw": 47.0
@@ -110908,12 +110908,12 @@
    "feeder": "Ulikkal Town [IRITTY 110 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 10.8,
+   "feasible_kw": 3.0,
    "registered_kw": 0.0,
    "connected_kw": 16.0,
    "key": "6761|67616",
-   "committed_kw": 26.8,
-   "balance_kw": 102.2
+   "committed_kw": 19.0,
+   "balance_kw": 110.0
   },
   {
    "district": "KANNUR",
@@ -115324,12 +115324,12 @@
    "feeder": "Puthur [PAYYANNUR 110 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 5.0,
+   "feasible_kw": 0.0,
    "registered_kw": 5.0,
    "connected_kw": 53.415,
    "key": "6650|665092",
-   "committed_kw": 63.415,
-   "balance_kw": 65.585
+   "committed_kw": 58.415,
+   "balance_kw": 70.585
   },
   {
    "district": "KANNUR",
@@ -115788,12 +115788,12 @@
    "feeder": "Kuniyan [PAYYANNUR 110 KV]",
    "kva": 160.0,
    "allowed_kw": 129.0,
-   "feasible_kw": 10.0,
+   "feasible_kw": 5.0,
    "registered_kw": 0.0,
    "connected_kw": 94.48,
    "key": "6650|665017",
-   "committed_kw": 104.48,
-   "balance_kw": 24.52
+   "committed_kw": 99.48,
+   "balance_kw": 29.52
   },
   {
    "district": "KANNUR",
